@@ -22,3 +22,7 @@ footer{border-top:1px solid var(--line);padding:24px 0 48px;color:var(--muted);f
 .doc h2{font-size:1.25rem;margin:28px 0 6px}
 .doc p,.doc li{color:var(--fg)}
 .doc .meta{color:var(--muted)}
+.btn{display:inline-block;align-self:flex-start;background:#B5462F;color:#fff;font-weight:800;text-decoration:none;padding:12px 24px;border-radius:99px}
+.btn:hover{background:#9C3B27}
+.btn:focus-visible{outline:3px solid var(--fg);outline-offset:3px}
+.hint{font-size:1rem!important}
