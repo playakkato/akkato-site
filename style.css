@@ -1,0 +1,24 @@
+:root{--bg:#E9EFF2;--fg:#1E2A33;--muted:#4F606B;--panel:#F7FAFB;--line:#C2CFD7;--accent:#C4533A;--blue:#2F86CF;--purple:#8257CC;--gold:#F2B84B}
+@media (prefers-color-scheme:dark){:root{--bg:#131B21;--fg:#E6EEF2;--muted:#9AABB6;--panel:#1A242B;--line:#2A3841;--accent:#F08A72}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:17px/1.6 ui-rounded,"Nunito","Segoe UI",system-ui,-apple-system,sans-serif}
+a{color:var(--accent)}
+a:focus-visible{outline:3px solid var(--accent);outline-offset:2px;border-radius:4px}
+.wrap{max-width:860px;margin:0 auto;padding:0 20px}
+header.site{padding:20px 0;display:flex;align-items:center;gap:12px;font-weight:800;font-size:1.25rem}
+header.site a{color:inherit;text-decoration:none;display:flex;align-items:center;gap:12px}
+.hero{padding:40px 0 24px;display:flex;flex-direction:column;gap:18px}
+.hero h1{margin:0;font-size:clamp(2.4rem,7vw,3.8rem);line-height:1.05;letter-spacing:-.02em}
+.hero p{margin:0;font-size:1.2rem;color:var(--muted);max-width:34em}
+.badge{display:inline-block;align-self:flex-start;background:var(--gold);color:#1E2A33;font-weight:800;font-size:.9rem;padding:4px 14px;border-radius:99px}
+.grid{display:grid;gap:16px;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));margin:24px 0 40px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:20px 22px}
+.card h2{margin:0 0 6px;font-size:1.1rem}
+.card p{margin:0;color:var(--muted);font-size:1rem}
+section.block{margin:0 0 40px}
+section.block h2{font-size:1.5rem;margin:0 0 10px}
+footer{border-top:1px solid var(--line);padding:24px 0 48px;color:var(--muted);font-size:.95rem}
+.doc h1{font-size:2.2rem;margin:24px 0 4px}
+.doc h2{font-size:1.25rem;margin:28px 0 6px}
+.doc p,.doc li{color:var(--fg)}
+.doc .meta{color:var(--muted)}
