@@ -4,6 +4,10 @@ Version numbers: the game, the web service worker cache and the Android versionN
 (set in package.json of akkato-app, APP_VERSION in the game file, VERSION in play/sw.js). Android versionCode is the
 workflow run number. 1.0.0 is reserved for the first store release.
 
+## 0.6.0
+- Removed Dissolve and the Timed sprint mode.
+- Helpers now arrive one at a time in Levels: Swap (level 3), Rewind (5), combo meter and Paint (7), frozen blocks (10), Color Clear (12). Each is explained when it arrives. Endless has them all.
+
 ## 0.5.0
 - New: Rewind, Color Clear, ice tiles (from level 10), Endless challenge toggle.
 - Level 8 eased (5-color collect goals about 30% smaller).

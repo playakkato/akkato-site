@@ -17,17 +17,17 @@
 [hidden]{display:none!important}
 :root{
   --bg:#E9EFF2; --fg:#1E2A33; --muted:#5B6B76; --board:#D6E0E6; --panel:#F7FAFB; --line:#C2CFD7; --accent:#E8735A; --track:#C9D5DC;
-  --t-swap:#2F86CF; --t-dissolve:#8257CC; --t-paint:#E0691F; --t-rewind:#2BA58F; --t-clear:#C2417A;
+  --t-swap:#2F86CF; --t-paint:#E0691F; --t-rewind:#2BA58F; --t-clear:#C2417A;
   --display:'Fredoka','Trebuchet MS',system-ui,sans-serif;
   --body:'Nunito',system-ui,-apple-system,'Segoe UI',sans-serif;
 }
 @media (prefers-color-scheme: dark){
   :root:not([data-theme="light"]){
-    --bg:#131B21; --fg:#E6EEF2; --muted:#8FA1AD; --board:#1C2830; --panel:#1A242B; --line:#2A3841; --track:#2A3841; --t-swap:#6DB2EC; --t-dissolve:#B097E6; --t-paint:#F29A57; --t-rewind:#5CCBB5; --t-clear:#E87FAE; color-scheme:dark;
+    --bg:#131B21; --fg:#E6EEF2; --muted:#8FA1AD; --board:#1C2830; --panel:#1A242B; --line:#2A3841; --track:#2A3841; --t-swap:#6DB2EC; --t-paint:#F29A57; --t-rewind:#5CCBB5; --t-clear:#E87FAE; color-scheme:dark;
   }
 }
 :root[data-theme="dark"]{
-  --bg:#131B21; --fg:#E6EEF2; --muted:#8FA1AD; --board:#1C2830; --panel:#1A242B; --line:#2A3841; --track:#2A3841; --t-swap:#6DB2EC; --t-dissolve:#B097E6; --t-paint:#F29A57; --t-rewind:#5CCBB5; --t-clear:#E87FAE; color-scheme:dark;
+  --bg:#131B21; --fg:#E6EEF2; --muted:#8FA1AD; --board:#1C2830; --panel:#1A242B; --line:#2A3841; --track:#2A3841; --t-swap:#6DB2EC; --t-paint:#F29A57; --t-rewind:#5CCBB5; --t-clear:#E87FAE; color-scheme:dark;
 }
 html,body{min-height:100%}
 body{
@@ -109,11 +109,13 @@ button.primary{background:var(--accent); border-color:var(--accent); color:#fff}
 .tool.util[data-tip]::after{left:auto; right:0; max-width:190px}
 .tool.util.on{background:var(--fg); color:var(--bg); border-color:var(--fg); box-shadow:none}
 #swap{--t:var(--t-swap)}
-#dissolve{--t:var(--t-dissolve)}
 #paint{--t:var(--t-paint)}
 #rewind{--t:var(--t-rewind)}
 #clear{--t:var(--t-clear)}
 .tool:hover{border-color:var(--t)}
+.tool.fresh{animation:fresh 1.6s ease-in-out infinite}
+@keyframes fresh{0%,100%{box-shadow:0 0 0 0 color-mix(in srgb,var(--t) 45%,transparent)}50%{box-shadow:0 0 0 7px color-mix(in srgb,var(--t) 0%,transparent)}}
+@media (prefers-reduced-motion:reduce){.tool.fresh{animation:none; box-shadow:0 0 0 3px color-mix(in srgb,var(--t) 40%,transparent)}}
 .tool.on{background:var(--t); color:#fff; border-color:var(--t); box-shadow:0 0 0 3px color-mix(in srgb,var(--t) 30%,transparent)}
 .tool.on .count{background:var(--fg); color:var(--bg)}
 .tool svg{width:22px; height:22px; fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; stroke-linejoin:round}
@@ -164,7 +166,6 @@ select{font:600 .85rem var(--body); color:var(--fg); background:var(--bg); borde
   <div class="modes" role="group" aria-label="Mode">
     <button id="mLevels" type="button" aria-pressed="true">Levels</button>
     <button id="mEndless" type="button" aria-pressed="false">Endless</button>
-    <button id="mTimed" type="button" aria-pressed="false">Timed sprint</button>
   </div>
 
   <div class="status">
@@ -173,7 +174,7 @@ select{font:600 .85rem var(--body); color:var(--fg); background:var(--bg); borde
       <div class="track"><i id="fill"></i></div>
     </div>
     <div class="chip" id="movesChip"><span id="movesLab">Moves</span><b id="moves">18</b></div>
-    <div class="chip"><span>Swaps</span><b id="swaps">3</b></div>
+    <div class="chip" id="swapChip"><span>Swaps</span><b id="swaps">3</b></div>
   </div>
 
   <div id="wrap">
@@ -195,7 +196,6 @@ select{font:600 .85rem var(--body); color:var(--fg); background:var(--bg); borde
 
   <div class="bar">
     <button id="swap" class="tool" type="button" data-tip="Swap: trade two neighboring blocks. Does not use a move." aria-label="Swap, 3 left"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h14l-3.5-3.5M20 16H6l3.5 3.5"/></svg><span class="count" id="swapCount">3</span></button>
-    <button id="dissolve" class="tool" type="button" data-tip="Dissolve: remove any one block. Does not use a move." aria-label="Dissolve, 1 left"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="5" width="10" height="10" rx="2.5" stroke-dasharray="2.6 2.6"/><circle cx="18.5" cy="7" r="1" fill="currentColor"/><circle cx="19.5" cy="13" r="1" fill="currentColor"/><circle cx="16" cy="19" r="1" fill="currentColor"/><circle cx="9" cy="19.5" r="1" fill="currentColor"/></svg><span class="count" id="dissolveCount">1</span></button>
     <button id="paint" class="tool" type="button" data-tip="Paint: tap a block and 7 blocks around it take its color. Pop them to make a bomb." aria-label="Paint, 1 left"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m19 11-8-8-8.6 8.6a2 2 0 0 0 0 2.8l5.2 5.2c.8.8 2 .8 2.8 0L19 11Z"/><path d="m5 2 5 5"/><path d="M2 13h15"/><path d="M22 20a2 2 0 1 1-4 0c0-1.6 1.7-2.4 2-4 .3 1.6 2 2.4 2 4Z"/></svg><span class="count" id="paintCount">1</span></button>
     <button id="clear" class="tool" type="button" data-tip="Color Clear: tap a block and every block of that color is removed. Does not use a move. Earn it from the combo meter." aria-label="Color Clear, 0 left"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3.2"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M18.4 5.6l-2.1 2.1M7.7 16.3l-2.1 2.1"/></svg><span class="count" id="clearCount">0</span></button>
     <button id="rewind" class="tool" type="button" data-tip="Rewind: undo your last move and get the moves back." aria-label="Rewind, 2 left"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg><span class="count" id="rewindCount">2</span></button>
@@ -231,8 +231,6 @@ select{font:600 .85rem var(--body); color:var(--fg); background:var(--bg); borde
     <input id="soundbox" type="checkbox" checked>
     <label for="challengebox">Endless challenge: a block freezes every few moves</label>
     <input id="challengebox" type="checkbox">
-    <label for="tickbox">Countdown ticks in the last 10 seconds</label>
-    <input id="tickbox" type="checkbox" checked>
     <label for="howBtn">How to play</label>
     <button id="howBtn" type="button">Show</button>
     <div class="note">Plays offline with no ads. Your progress is saved on this device.</div>
@@ -244,6 +242,9 @@ select{font:600 .85rem var(--body); color:var(--fg); background:var(--bg); borde
 (function(){
   var COLS=8, ROWS=10;
   var METER_MAX=4, POWER_CAP=3, PAINT_SIZE=7;
+  /* Tools arrive one at a time in Levels. Endless has them all. */
+  var UNLOCK={swap:3,rewind:5,paint:7,clear:12};
+  function toolOn(t){ return mode!=='levels' || level>=UNLOCK[t]; }
   var PALETTES={
     'default':['#E8735A','#529CD6','#5FB383','#F0B445','#A488D4'],
     'cb':['#D55E00','#56B4E9','#009E73','#F0E442','#CC79A7'],
@@ -259,15 +260,13 @@ select{font:600 .85rem var(--body); color:var(--fg); background:var(--bg); borde
   var cell=40, W=0, H=0, dpr=1;
   var grid=[], parts=[], score=0, best=0, moving=false, needCheck=false, hintT=0, frame=0;
   var mode='levels', level=1, maxLevel=1, ncolors=3, movesLeft=18, goal=null, collected=0;
-  var swapsLeft=3, dissolveLeft=1, paintLeft=1, clearLeft=0, rewindLeft=2, meter=0, grantNext='paint';
+  var swapsLeft=3, paintLeft=1, clearLeft=0, rewindLeft=2, meter=0, grantNext='paint';
   var undoSnap=null, challenge=false, endlessMoves=0, iceToPlace=0;
   var phase='play'; // play | ready | won | lost | over
   var tool=null, sel=null, onOverlay=null;
   var paletteKey='default', colors=PALETTES['default'].slice(), bigShapes=false;
   var boardCol='#ccc', fgCol='#000';
   var soundOn=true, actx=null;
-  var TIME_START=60, TIME_CAP=90;
-  var bestTimed=0, timeLeft=TIME_START, tickOn=true, lastSec=-1;
   var hintDelay=10, idleT=0, hintMove=null;
   var startMoves=18, onOverlay2=null, starsMap={}, tips={}, tutDone=false;
 
@@ -277,13 +276,11 @@ select{font:600 .85rem var(--body); color:var(--fg); background:var(--bg); borde
 
   /* ---------- saved settings ---------- */
   best=parseInt(safeGet('eb-best')||'0',10)||0;
-  bestTimed=parseInt(safeGet('eb-best-timed')||'0',10)||0;
   maxLevel=Math.max(1,parseInt(safeGet('eb-level')||'1',10)||1);
   level=maxLevel;
   var sm=safeGet('eb-mode');
-  mode=sm==='endless'?'endless':(sm==='timed'?'timed':'levels');
+  mode=sm==='endless'?'endless':'levels';
   soundOn=safeGet('eb-sound')!=='off';
-  tickOn=safeGet('eb-tick')!=='off';
   var sp=safeGet('eb-palette'); if(sp&&PALETTES[sp]) paletteKey=sp;
   bigShapes=safeGet('eb-big')==='1';
   var savedTheme=safeGet('eb-theme')||'auto';
@@ -360,7 +357,6 @@ select{font:600 .85rem var(--body); color:var(--fg); background:var(--bg); borde
     ct=ncol===5?Math.min(50,Math.round(ct*0.7)):Math.min(70,ct);
     return {ncol:ncol,moves:moves+2,type:'collect',color:(n/2-1)%ncol,target:ct};
   }
-  function timeBonus(n){ return n>=10?4:(n>=7?3:(n>=5?2:(n>=4?1:0))); }
 
   /* ---------- grid ---------- */
   function newBlock(){return {c:rnd(ncolors),bomb:false,ice:false,y:0,vy:0,s:1,ox:0,oy:0}}
@@ -498,8 +494,6 @@ select{font:600 .85rem var(--body); color:var(--fg); background:var(--bg); borde
     var v=n*(n-1)*5;
     if(mode==='levels'&&goal&&goal.type==='collect'){
       v=(colorIdx===goal.color)?(n*40+n*(n-1)*2):(n*(n-1));
-    } else if(mode==='timed'){
-      v=n*(n-1)*5+timeBonus(n)*50;
     }
     if(n>=7) v+=90;
     return v;
@@ -528,7 +522,6 @@ select{font:600 .85rem var(--body); color:var(--fg); background:var(--bg); borde
           val+=cnt*12*chain;
         }
         if(collect) val=tgt*40+cells.length*3;
-        if(mode==='timed') val+=Math.min(8,chain*2)*50;
         cand={cells:cells,value:val,label:chain>1?('Bomb chain x'+chain+' clears the most here.'):'This bomb clears the most right now.'};
       } else {
         var grp=cluster(c,r);
@@ -563,10 +556,8 @@ select{font:600 .85rem var(--body); color:var(--fg); background:var(--bg); borde
 
   function defaultHint(){
     if(tool==='swap') return 'Swap: tap a block, then a neighbor. It turns off after one swap.';
-    if(tool==='dissolve') return 'Dissolve: tap any block to remove it.';
     if(tool==='paint') return 'Paint: tap a block and '+PAINT_SIZE+' blocks around it take its color.';
     if(tool==='clear') return 'Color Clear: tap a block to remove every block of that color.';
-    if(mode==='timed') return 'Sprint: big groups and chained bombs add seconds.';
     return mode==='levels'
       ? 'Tap a group of 2 or more. Pop 7+ to make a bomb.'
       : (challenge ? 'Endless challenge: a block freezes every few moves. Pop next to it to thaw it.' : 'Endless: no limits. You earn a swap every 400 points.');
@@ -584,8 +575,6 @@ select{font:600 .85rem var(--body); color:var(--fg); background:var(--bg); borde
     if(mode==='levels' && goal){
       var prog=goal.type==='score'?score:collected;
       gt.innerHTML='Level '+level+': '+goalLabel()+' ('+Math.min(prog,goal.target)+'/'+goal.target+')';
-    } else if(mode==='timed'){
-      gt.textContent='Timed sprint: pop big groups to earn time';
     } else {
       gt.textContent='Endless: pop at your own pace';
     }
@@ -593,11 +582,6 @@ select{font:600 .85rem var(--body); color:var(--fg); background:var(--bg); borde
   function setResetLabel(t){
     $('reset').setAttribute('data-tip',t);
     $('reset').setAttribute('aria-label',t);
-  }
-  function updateTimeUI(){
-    $('moves').textContent=Math.max(0,Math.ceil(timeLeft));
-    $('fill').style.width=Math.max(0,Math.min(100,timeLeft/TIME_CAP*100))+'%';
-    $('fill').parentNode.classList.toggle('low',timeLeft<=10);
   }
   function buildPips(){
     var p=$('pips'); p.innerHTML='';
@@ -614,7 +598,6 @@ select{font:600 .85rem var(--body); color:var(--fg); background:var(--bg); borde
   function updateHUD(){
     elScore.textContent=score;
     $('fill').parentNode.classList.remove('low');
-    $('movesLab').textContent=mode==='timed'?'Seconds':'Moves';
     if(mode==='levels'){
       elLab2.textContent='Level'; elStat2.textContent=level;
       $('movesChip').hidden=false;
@@ -622,11 +605,6 @@ select{font:600 .85rem var(--body); color:var(--fg); background:var(--bg); borde
       var prog=goal.type==='score'?score:collected;
       $('fill').style.width=Math.min(100,Math.round(prog/goal.target*100))+'%';
       setResetLabel('Restart level');
-    } else if(mode==='timed'){
-      elLab2.textContent='Best'; elStat2.textContent=bestTimed;
-      $('movesChip').hidden=false;
-      updateTimeUI();
-      setResetLabel('Restart the sprint');
     } else {
       elLab2.textContent='Best'; elStat2.textContent=best;
       $('movesChip').hidden=true;
@@ -635,30 +613,28 @@ select{font:600 .85rem var(--body); color:var(--fg); background:var(--bg); borde
     }
     $('swaps').textContent=swapsLeft;
     $('swapCount').textContent=swapsLeft;
-    $('dissolveCount').textContent=dissolveLeft;
     $('paintCount').textContent=paintLeft;
     $('clearCount').textContent=clearLeft;
     $('rewindCount').textContent=rewindLeft;
     $('swap').setAttribute('aria-label','Swap, '+swapsLeft+' left');
-    $('dissolve').setAttribute('aria-label','Dissolve, '+dissolveLeft+' left');
     $('paint').setAttribute('aria-label','Paint, '+paintLeft+' left');
     $('clear').setAttribute('aria-label','Color Clear, '+clearLeft+' left');
     $('rewind').setAttribute('aria-label','Rewind, '+rewindLeft+' left');
     $('swap').disabled=swapsLeft<=0 && tool!=='swap';
-    $('dissolve').disabled=dissolveLeft<=0 && tool!=='dissolve';
     $('paint').disabled=paintLeft<=0 && tool!=='paint';
     $('clear').disabled=clearLeft<=0 && tool!=='clear';
-    $('rewind').hidden=(mode==='timed');
+    $('swap').hidden=!toolOn('swap'); $('swapChip').hidden=!toolOn('swap');
+    $('rewind').hidden=!toolOn('rewind');
+    $('paint').hidden=!toolOn('paint'); $('clear').hidden=!toolOn('clear');
+    $('meterBox').hidden=!(toolOn('paint')||toolOn('clear'));
     $('rewind').disabled=(rewindLeft<=0||!undoSnap);
     $('swap').classList.toggle('on',tool==='swap');
-    $('dissolve').classList.toggle('on',tool==='dissolve');
     $('paint').classList.toggle('on',tool==='paint');
     $('clear').classList.toggle('on',tool==='clear');
     $('wrap').classList.toggle('tooling',tool!==null);
     $('mLevels').setAttribute('aria-pressed',mode==='levels');
     $('levelsBtn').hidden=(mode!=='levels');
     $('mEndless').setAttribute('aria-pressed',mode==='endless');
-    $('mTimed').setAttribute('aria-pressed',mode==='timed');
     updateMeterUI();
     updateGoalText();
   }
@@ -666,22 +642,21 @@ select{font:600 .85rem var(--body); color:var(--fg); background:var(--bg); borde
   function addScore(n){
     var before=score;
     score+=n;
-    if(mode==='timed'&&score>bestTimed){bestTimed=score; safeSet('eb-best-timed',String(bestTimed)); elStat2.textContent=bestTimed;}
     if(mode==='endless'&&score>best){best=score; safeSet('eb-best',String(best));}
-    if(mode==='endless'||mode==='timed'){
+    if(mode==='endless'){
       var gain=Math.floor(score/400)-Math.floor(before/400);
       if(gain>0){swapsLeft+=gain; say('+'+gain+' swap earned.',1800);}
     }
   }
 
   /* ---------- combo meter and power-ups ---------- */
-  var POWER_SEQ=['paint','dissolve','clear'];
+  var POWER_SEQ=['paint','clear'];
   function grantPower(){
     var start=Math.max(0,POWER_SEQ.indexOf(grantNext));
     for(var i=0;i<POWER_SEQ.length;i++){
       var t=POWER_SEQ[(start+i)%POWER_SEQ.length], nxt=POWER_SEQ[(start+i+1)%POWER_SEQ.length];
+      if(!toolOn(t)) continue;
       if(t==='paint'&&paintLeft<POWER_CAP){ paintLeft++; grantNext=nxt; say('Power-up earned: Paint splash!',2600); tone(523.25,0.3,0.12); tone(784,0.3,0.1); return true; }
-      if(t==='dissolve'&&dissolveLeft<POWER_CAP){ dissolveLeft++; grantNext=nxt; say('Power-up earned: Dissolve!',2600); tone(523.25,0.3,0.12); tone(784,0.3,0.1); return true; }
       if(t==='clear'&&clearLeft<POWER_CAP){ clearLeft++; grantNext=nxt; say('Power-up earned: Color Clear!',2600); tone(523.25,0.3,0.12); tone(784,0.3,0.1); return true; }
     }
     return false;
@@ -691,7 +666,7 @@ select{font:600 .85rem var(--body); color:var(--fg); background:var(--bg); borde
     if(meter>=METER_MAX && grantPower()) meter=0;
   }
   function resetPowers(){
-    swapsLeft=3; dissolveLeft=1; paintLeft=1; clearLeft=0; rewindLeft=(mode==='timed'?0:2); meter=0; grantNext='paint';
+    swapsLeft=3; paintLeft=1; clearLeft=(mode==='levels'&&level===UNLOCK.clear)?1:0; rewindLeft=2; meter=0; grantNext='paint';
     undoSnap=null; endlessMoves=0;
   }
 
@@ -741,8 +716,8 @@ select{font:600 .85rem var(--body); color:var(--fg); background:var(--bg); borde
     return g;
   }
   function takeSnap(){
-    undoSnap={g:serializeGrid(),score:score,movesLeft:movesLeft,collected:collected,swaps:swapsLeft,dis:dissolveLeft,
-      paint:paintLeft,clr:clearLeft,meter:meter,grantNext:grantNext,timeLeft:timeLeft,em:endlessMoves};
+    undoSnap={g:serializeGrid(),score:score,movesLeft:movesLeft,collected:collected,swaps:swapsLeft,
+      paint:paintLeft,clr:clearLeft,meter:meter,grantNext:grantNext,em:endlessMoves};
   }
   function loadGridFrom(arr){
     var holes=false;
@@ -758,10 +733,10 @@ select{font:600 .85rem var(--body); color:var(--fg); background:var(--bg); borde
     return holes;
   }
   function doRewind(){
-    if(!undoSnap||rewindLeft<=0||phase!=='play'||moving||mode==='timed') return;
+    if(!undoSnap||rewindLeft<=0||phase!=='play'||moving||!toolOn('rewind')) return;
     var u=undoSnap;
     loadGridFrom(u.g);
-    score=u.score; movesLeft=u.movesLeft; collected=u.collected; swapsLeft=u.swaps; dissolveLeft=u.dis; paintLeft=u.paint;
+    score=u.score; movesLeft=u.movesLeft; collected=u.collected; swapsLeft=u.swaps; paintLeft=u.paint;
     clearLeft=u.clr; meter=u.meter; grantNext=u.grantNext; endlessMoves=u.em;
     rewindLeft--; undoSnap=null; parts=[]; clearTool(); hintMove=null; idleT=0; needCheck=false; moving=false;
     tone(392,0.15,0.1); tone(330,0.15,0.08); tone(262,0.2,0.08);
@@ -772,7 +747,7 @@ select{font:600 .85rem var(--body); color:var(--fg); background:var(--bg); borde
   function saveGame(){
     if((mode!=='levels'&&mode!=='endless')||phase!=='play'||!grid.length) return;
     var s={v:1,level:level,score:score,movesLeft:movesLeft,startMoves:startMoves,collected:collected,
-      swaps:swapsLeft,dis:dissolveLeft,paint:paintLeft,clr:clearLeft,rw:rewindLeft,em:endlessMoves,meter:meter,grantNext:grantNext,ncolors:ncolors,goal:goal,grid:serializeGrid()};
+      swaps:swapsLeft,paint:paintLeft,clr:clearLeft,rw:rewindLeft,em:endlessMoves,meter:meter,grantNext:grantNext,ncolors:ncolors,goal:goal,grid:serializeGrid()};
     safeSet('eb-save-'+mode,JSON.stringify(s));
   }
   function clearSave(m){ try{ localStorage.removeItem('eb-save-'+m); }catch(e){} }
@@ -790,10 +765,9 @@ select{font:600 .85rem var(--body); color:var(--fg); background:var(--bg); borde
     mode=m; level=num(s.level,1,1,100000); score=num(s.score,0,0,1e9); movesLeft=num(s.movesLeft,0,0,999);
     startMoves=num(s.startMoves,0,0,999)||movesLeft||18; collected=num(s.collected,0,0,1e6);
     swapsLeft=num(s.swaps,3,0,99);
-    dissolveLeft=num(s.dis,1,0,99);
     paintLeft=num(s.paint,1,0,99);
-    clearLeft=num(s.clr,0,0,99); rewindLeft=(m==='timed'?0:num(s.rw,2,0,9)); endlessMoves=num(s.em,0,0,1e6); undoSnap=null;
-    meter=num(s.meter,0,0,METER_MAX); grantNext=(s.grantNext==='dissolve'||s.grantNext==='clear')?s.grantNext:'paint';
+    clearLeft=num(s.clr,0,0,99); rewindLeft=num(s.rw,2,0,9); endlessMoves=num(s.em,0,0,1e6); undoSnap=null;
+    meter=num(s.meter,0,0,METER_MAX); grantNext=(s.grantNext==='clear')?'clear':'paint';
     ncolors=num(s.ncolors,3,3,5);
     goal=null;
     if(m==='levels') goal={type:s.goal.type==='collect'?'collect':'score', target:num(s.goal.target,500,1,1e6), color:num(s.goal.color,0,0,4)};
@@ -802,12 +776,13 @@ select{font:600 .85rem var(--body); color:var(--fg); background:var(--bg); borde
     hintMove=null; idleT=0; moving=false; needCheck=false;
     if(holes) compact();
     updateHUD(); say('Welcome back. Your game was saved.',2600);
+    showNewTools();
     return true;
   }
   function enter(m){
     var s=(m==='levels'||m==='endless')?loadSave(m):null;
     if(s&&restoreGame(s,m)) return;
-    if(m==='levels') startLevel(maxLevel); else if(m==='timed') startTimed(); else startEndless();
+    if(m==='levels') startLevel(maxLevel); else startEndless();
   }
 
   function buildPicker(){
@@ -832,17 +807,40 @@ select{font:600 .85rem var(--body); color:var(--fg); background:var(--bg); borde
   var HOWTO='<ul class="howto">'+
     '<li><b>Pop groups.</b> Tap 2 or more touching blocks of the same color.</li>'+
     '<li><b>Make bombs.</b> Pop 7 or more to leave a bomb. Tap it to clear a 5 by 5 area. Bombs that touch a blast chain, and each link in the chain gets a bigger blast and more points.</li>'+
-    '<li><b>Fill the combo meter.</b> Pop 5 or more at once to earn Paint, Dissolve and Color Clear power-ups.</li>'+
-    '<li><b>New tools.</b> Rewind undoes your last move. Color Clear removes every block of one color. Frozen blocks thaw when you pop a group next to them.</li>'+
+    '<li><b>New tools.</b> In Levels, helpers show up one at a time as you play, and each one is explained when it arrives.</li>'+
     '<li><b>No rush.</b> Levels have no timer. If you pause, the game shows you a good move.</li></ul>';
   function showIntro(){
     if(!$('overlay').hidden||phase==='ready') return;
     showOverlay('How to play',HOWTO,'Got it',function(){
       hideOverlay(); tutDone=true; safeSet('eb-tut','1'); idleT=0;
-      if(phase==='play'&&mode!=='timed'){
+      if(phase==='play'){
         hintMove=findBestMove();
         if(hintMove) say('Tap the glowing group to pop it.',9000);
       }
+    },{html:true});
+  }
+
+  var TOOL_INFO=[
+    {k:'swap',at:3,name:'Swap',txt:'Trade two neighboring blocks to line up a match. It does not use a move. Tap the swap button, then two neighbors.'},
+    {k:'rewind',at:5,name:'Rewind',txt:'Undo your last move and get the move back. You have two each level.'},
+    {k:'paint',at:7,name:'Combo meter and Paint',txt:'Pop 5 or more at once to charge the combo meter. A full meter earns a power-up. Paint recolors the blocks around the one you tap.'},
+    {k:'ice',at:10,name:'Frozen blocks',txt:'Frozen blocks cannot be tapped or matched. Pop a group next to one to thaw it.'},
+    {k:'clear',at:12,name:'Color Clear',txt:'Tap a block and every block of that color is removed, with no move used. It comes from the combo meter too. Here is one to start.'}];
+  function showNewTools(){
+    if(mode!=='levels'||phase!=='play'||!$('overlay').hidden) return;
+    var fresh=[];
+    for(var i=0;i<TOOL_INFO.length;i++) if(level>=TOOL_INFO[i].at&&!tips['u-'+TOOL_INFO[i].k]) fresh.push(TOOL_INFO[i]);
+    if(!fresh.length) return;
+    var html='<ul class="howto">';
+    for(var j=0;j<fresh.length;j++) html+='<li><b>'+fresh[j].name+'.</b> '+fresh[j].txt+'</li>';
+    html+='</ul>';
+    showOverlay(fresh.length>1?'New helpers':(fresh[0].k==='ice'?'New: frozen blocks':'New tool: '+fresh[0].name),html,'Got it',function(){
+      hideOverlay(); idleT=0;
+      for(var k=0;k<fresh.length;k++){
+        tips['u-'+fresh[k].k]=1;
+        var el=$(fresh[k].k); if(el&&!el.hidden) el.classList.add('fresh');
+      }
+      safeSet('eb-tips',JSON.stringify(tips));
     },{html:true});
   }
 
@@ -853,31 +851,18 @@ select{font:600 .85rem var(--body); color:var(--fg); background:var(--bg); borde
     iceToPlace=n>=10?Math.min(12,3+Math.floor((n-10)/2)):0;
     phase='play'; clearTool(); hideOverlay(); closePicker(); clearSave('levels'); fillBoard(); updateHUD();
     say('Level '+n+(iceToPlace>0?' (some blocks are frozen)':'')+': '+(d.type==='score'?'reach '+d.target+' points.':'collect '+d.target+' '+SHAPE_NAMES[d.color]+' blocks.'),3200);
+    showNewTools();
   }
   function startEndless(){
     ncolors=5; score=0; goal=null; phase='play'; resetPowers();
     clearTool(); hideOverlay(); closePicker(); clearSave('endless'); fillBoard(); updateHUD();
     elHint.textContent=defaultHint();
   }
-  function startTimed(){
-    ncolors=4; score=0; goal=null; timeLeft=TIME_START; lastSec=-1; phase='ready'; resetPowers();
-    clearTool(); hideOverlay(); fillBoard(); updateHUD();
-    showOverlay('Timed sprint','You have 60 seconds. Big groups and chained bombs add time. The clock pauses while you use a swap or power-up.','Start',function(){
-      hideOverlay(); phase='play'; idleT=0; elHint.textContent=defaultHint();
-    });
-  }
   function setMode(m){
     if(m===mode&&phase==='play'&&grid.length) return;
     mode=m; safeSet('eb-mode',m);
     enter(m);
   }
-  function endSprint(){
-    phase='over'; clearTool();
-    var isBest=score>0&&score>=bestTimed;
-    tone(392,0.4,0.12); setTimeout(function(){tone(330,0.5,0.12)},180);
-    showOverlay("Time's up",'You scored '+score+'.'+(isBest?' That is your best sprint.':' Your best is '+bestTimed+'.'),'Play again',function(){startTimed()});
-  }
-
   function checkEnd(){
     if(mode!=='levels'||phase!=='play') return;
     var prog=goal.type==='score'?score:collected;
@@ -952,11 +937,6 @@ select{font:600 .85rem var(--body); color:var(--fg); background:var(--bg); borde
       say('Chain x'+chain+'! Linked bombs widen the blast and multiply the points.',2400);
       registerCombo();
     }
-    if(mode==='timed'){
-      var tb=Math.min(8,chain*2);
-      timeLeft=Math.min(TIME_CAP,timeLeft+tb);
-      floatText((c0+0.5)*cell,(r0+0.5)*cell+cell*0.7,'+'+tb+'s');
-    }
     tone(196,0.5,0.2); tone(392,0.35,0.1);
     if(chain>1){ setTimeout(function(){tone(523.25,0.4,0.12)},120); }
     if(mode==='levels') movesLeft--;
@@ -979,17 +959,6 @@ select{font:600 .85rem var(--body); color:var(--fg); background:var(--bg); borde
     updateHUD(); saveGame();
   }
 
-  function dissolveBlock(c,r){
-    var b=grid[c][r]; if(!b) return;
-    takeSnap();
-    remove(c,r,10);
-    dissolveLeft--; clearTool();
-    tone(660,0.2,0.12); tone(440,0.25,0.08);
-    elHint.textContent=defaultHint();
-    compact(); updateHUD();
-  }
-
-  /* Endless challenge: every 6th move, 1 to 3 blocks freeze (more as the score climbs). */
   function endlessTurn(){
     if(mode!=='endless'||!challenge) return;
     endlessMoves++;
@@ -1063,7 +1032,6 @@ select{font:600 .85rem var(--body); color:var(--fg); background:var(--bg); borde
       if(Math.abs(sel.c-c)+Math.abs(sel.r-r)===1){ doSwap(sel,{c:c,r:r}); return; }
       sel={c:c,r:r}; tone(440,0.1,0.08); return;
     }
-    if(tool==='dissolve'){ dissolveBlock(c,r); return; }
     if(tool==='paint'){ paintSplash(c,r); return; }
     if(tool==='clear'){ clearColor(c,r); return; }
 
@@ -1076,7 +1044,7 @@ select{font:600 .85rem var(--body); color:var(--fg); background:var(--bg); borde
     var grp=cluster(c,r);
     if(grp.length<2){
       b.s=0.82; tone(130,0.12,0.08);
-      say('That one is on its own. Try a group, or use a swap.',1800);
+      say('That one is on its own. Try a group'+(toolOn('swap')?', or use a swap.':'.'),1800);
       return;
     }
     takeSnap();
@@ -1096,13 +1064,6 @@ select{font:600 .85rem var(--body); color:var(--fg); background:var(--bg); borde
     if(n<7) tip('pop','Nice! Bigger groups score more. Pop 7 or more to make a bomb.',5000);
     if(mode==='levels') movesLeft--;
     endlessTurn();
-    if(mode==='timed'){
-      var bonus=timeBonus(n);
-      if(bonus>0){
-        timeLeft=Math.min(TIME_CAP,timeLeft+bonus);
-        floatText((c+0.5)*cell,(r+0.5)*cell+cell*0.6,'+'+bonus+'s');
-      }
-    }
     compact(); updateHUD();
   }
 
@@ -1281,16 +1242,6 @@ select{font:600 .85rem var(--body); color:var(--fg); background:var(--bg); borde
       }
     }
     if(hintT>0){hintT-=dt*1000; if(hintT<=0) elHint.textContent=defaultHint();}
-    if(mode==='timed'&&phase==='play'&&tool===null&&!moving&&modalClosed()){
-      timeLeft-=dt;
-      var sec=Math.ceil(timeLeft);
-      if(sec!==lastSec){
-        lastSec=sec;
-        if(tickOn&&sec<=10&&sec>0) tone(sec<=3?880:660,0.08,0.06);
-      }
-      if(timeLeft<=0){ timeLeft=0; updateTimeUI(); endSprint(); }
-    }
-    if(mode==='timed') updateTimeUI();
 
     // idle hint: best move glows after a pause
     if(hintDelay>0&&phase==='play'&&!moving&&tool===null&&modalClosed()){
@@ -1317,22 +1268,17 @@ select{font:600 .85rem var(--body); color:var(--fg); background:var(--bg); borde
   $('ovBtn2').addEventListener('click',function(){ ensureAudio(); var f=onOverlay2; if(f) f(); });
   $('levelsBtn').addEventListener('click',function(){ ensureAudio(); openPicker(); });
   $('pickClose').addEventListener('click',function(){ closePicker(); });
-  var APP_VERSION='0.5.0';
+  var APP_VERSION='0.6.0';
   $('verNum').textContent='v'+APP_VERSION;
   $('howBtn').addEventListener('click',function(){ showIntro(); });
   document.addEventListener('visibilitychange',function(){ if(document.visibilityState==='hidden') saveGame(); });
   window.addEventListener('pagehide',saveGame);
   $('mLevels').addEventListener('click',function(){ ensureAudio(); setMode('levels'); });
   $('mEndless').addEventListener('click',function(){ ensureAudio(); setMode('endless'); });
-  $('mTimed').addEventListener('click',function(){ ensureAudio(); setMode('timed'); });
-  $('tickbox').addEventListener('change',function(){ tickOn=this.checked; safeSet('eb-tick',tickOn?'on':'off'); });
+  document.querySelector('.bar').addEventListener('click',function(e){ var t=e.target.closest&&e.target.closest('.tool'); if(t) t.classList.remove('fresh'); });
   $('swap').addEventListener('click',function(){
     if(moving||phase!=='play') return; ensureAudio();
     if(tool==='swap'||swapsLeft>0) setTool('swap');
-  });
-  $('dissolve').addEventListener('click',function(){
-    if(moving||phase!=='play') return; ensureAudio();
-    if(tool==='dissolve'||dissolveLeft>0) setTool('dissolve');
   });
   $('paint').addEventListener('click',function(){
     if(moving||phase!=='play') return; ensureAudio();
@@ -1354,7 +1300,7 @@ select{font:600 .85rem var(--body); color:var(--fg); background:var(--bg); borde
   });
   $('reset').addEventListener('click',function(){
     ensureAudio();
-    if(mode==='levels') startLevel(level); else if(mode==='timed') startTimed(); else startEndless();
+    if(mode==='levels') startLevel(level); else startEndless();
   });
   $('settingsBtn').addEventListener('click',function(){
     var s=$('settings'); s.hidden=!s.hidden;
@@ -1381,14 +1327,13 @@ select{font:600 .85rem var(--body); color:var(--fg); background:var(--bg); borde
   $('bigshapes').checked=bigShapes;
   $('theme').value=savedTheme;
   $('soundbox').checked=soundOn;
-  $('tickbox').checked=tickOn;
   $('challengebox').checked=challenge;
   $('hintsel').value=hintDelay===0?'off':String(hintDelay);
   applyTheme(savedTheme);
   buildPips();
   applyPalette(); readTheme(); layout();
   enter(mode);
-  if(!tutDone&&mode!=='timed') showIntro();
+  if(!tutDone) showIntro();
   requestAnimationFrame(tick);
 })();
 </script>
