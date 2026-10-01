@@ -60,6 +60,12 @@ h1{font-family:var(--display); font-weight:600; font-size:1.7rem; line-height:1;
 
 #wrap{width:100%; display:flex; justify-content:center; position:relative}
 #stage{position:relative; line-height:0}
+#flash{position:absolute; inset:0; border-radius:18px; pointer-events:none; opacity:0}
+@keyframes akShake{0%{transform:translate(0,0)}15%{transform:translate(var(--sx,6px),var(--sy,4px))}30%{transform:translate(calc(var(--sx,6px)*-.8),calc(var(--sy,4px)*.6))}45%{transform:translate(calc(var(--sx,6px)*.6),calc(var(--sy,4px)*-.7))}60%{transform:translate(calc(var(--sx,6px)*-.4),calc(var(--sy,4px)*.4))}80%{transform:translate(calc(var(--sx,6px)*.2),0)}100%{transform:translate(0,0)}}
+@keyframes akFlash{0%{opacity:var(--fo,.4)}100%{opacity:0}}
+#stage.shake{animation:akShake var(--dur,320ms) ease-out}
+#flash.go{animation:akFlash 380ms ease-out}
+@media (prefers-reduced-motion: reduce){ #stage.shake,#flash.go{animation:none} }
 canvas{display:block; background:var(--board); border-radius:18px; touch-action:manipulation; cursor:pointer}
 #wrap.tooling canvas{outline:3px solid var(--accent); outline-offset:-3px}
 #overlay{position:absolute; inset:0; display:flex; align-items:center; justify-content:center; padding:16px; background:rgba(10,18,24,.45); border-radius:18px; line-height:1.3}
@@ -171,6 +177,7 @@ select{font:600 .85rem var(--body); color:var(--fg); background:var(--bg); borde
   <div id="wrap">
     <div id="stage">
       <canvas id="board" aria-label="Game board. Tap groups of two or more matching blocks to pop them."></canvas>
+      <div id="flash" aria-hidden="true"></div>
       <div id="overlay" hidden><div class="card"><h2 id="ovTitle"></h2><div id="ovStars" class="st" hidden></div><p id="ovBody"></p><div class="row"><button id="ovBtn" type="button" class="primary">Continue</button><button id="ovBtn2" type="button" hidden>Replay</button></div></div></div>
       <div id="picker" hidden><div class="pickhead"><h2>Choose a level</h2><button id="pickClose" type="button">Close</button></div><div id="pickGrid"></div></div>
     </div>
@@ -750,7 +757,7 @@ select{font:600 .85rem var(--body); color:var(--fg); background:var(--bg); borde
 
   var HOWTO='<ul class="howto">'+
     '<li><b>Pop groups.</b> Tap 2 or more touching blocks of the same color.</li>'+
-    '<li><b>Make bombs.</b> Pop 7 or more to leave a bomb. Tap it to clear a 3 by 3 area. Bombs that touch a blast chain, and each link in the chain gets a bigger blast and more points.</li>'+
+    '<li><b>Make bombs.</b> Pop 7 or more to leave a bomb. Tap it to clear a 5 by 5 area. Bombs that touch a blast chain, and each link in the chain gets a bigger blast and more points.</li>'+
     '<li><b>Fill the combo meter.</b> Pop 5 or more at once to earn Dissolve and Paint power-ups.</li>'+
     '<li><b>No rush.</b> Levels have no timer. If you pause, the game shows you a good move.</li></ul>';
   function showIntro(){
@@ -825,6 +832,21 @@ select{font:600 .85rem var(--body); color:var(--fg); background:var(--bg); borde
     grid[c][r]=null;
   }
 
+  /* Screen shake and a soft warm flash. Stronger for longer chains. One fade, never repeated, and skipped
+     entirely when the device asks for reduced motion. */
+  function blastFx(c0,r0,chain){
+    try{
+      if(window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+      var st=$('stage'), fl=$('flash'); if(!st||!fl) return;
+      var amp=Math.min(14,4+chain*2.5), dur=Math.min(520,260+chain*50);
+      st.style.setProperty('--sx',amp+'px'); st.style.setProperty('--sy',(amp*0.7)+'px'); st.style.setProperty('--dur',dur+'ms');
+      fl.style.setProperty('--fo',Math.min(0.55,0.28+chain*0.06));
+      fl.style.background='radial-gradient(circle at '+((c0+0.5)/COLS*100)+'% '+((r0+0.5)/ROWS*100)+'%, rgba(255,250,225,.95), rgba(255,196,110,.6) 30%, rgba(255,150,80,0) 65%)';
+      st.classList.remove('shake'); fl.classList.remove('go'); void st.offsetWidth;
+      st.classList.add('shake'); fl.classList.add('go');
+    }catch(e){}
+  }
+
   function explode(c0,r0){
     var queue=[[c0,r0]], done={}, chain=0, pts=0;
     while(queue.length){
@@ -832,8 +854,8 @@ select{font:600 .85rem var(--body); color:var(--fg); background:var(--bg); borde
       if(done[k]) continue; done[k]=1;
       chain++;
       var cnt=0;
-      /* Chains grow: the first two blasts are 3x3, the third and later are 5x5, and from the fifth on 7x7. */
-      var sz=chain>=5?7:(chain>=3?5:3), half=(sz-1)/2;
+      /* A blast reaches 2 blocks out (5x5). From the third bomb in a chain it reaches 3 out (7x7). */
+      var sz=chain>=3?7:5, half=(sz-1)/2;
       var wx=Math.max(0,Math.min(COLS-sz,p[0]-half)), wy=Math.max(0,Math.min(ROWS-sz,p[1]-half));
       for(var dx=0;dx<sz;dx++) for(var dy=0;dy<sz;dy++){
         var x=wx+dx, y=wy+dy;
@@ -846,6 +868,7 @@ select{font:600 .85rem var(--body); color:var(--fg); background:var(--bg); borde
     }
     pts=scaled(pts);
     addScore(pts);
+    blastFx(c0,r0,chain);
     floatText((c0+0.5)*cell,(r0+0.5)*cell,'+'+pts);
     if(chain>1){
       floatText((c0+0.5)*cell,(r0+0.5)*cell-cell*0.7,'Chain x'+chain);
