@@ -4,6 +4,16 @@ Version numbers: the game, the web service worker cache and the Android versionN
 (set in package.json of akkato-app, APP_VERSION in the game file, VERSION in play/sw.js). Android versionCode is the
 workflow run number. 1.0.0 is reserved for the first store release.
 
+## 0.7.0
+- 60 levels in six worlds (Meadow, Shoreline, Grove, Canyon, Frostfield, Night Garden) with a world card, a world-complete moment and a finale. Late-level difficulty tuned with bot runs.
+- Daily challenge: same starting board each day, streak that forgives one missed day, +1 bonus star.
+- Stars unlock backgrounds (Meadow 12, Shoreline 30, Dusk 55, Blossom 85).
+- Sound: soft generative background music with volume control, softer pops, bell chime on wins, blast thump.
+- Vibration on pops and blasts (Android app uses @capacitor/haptics; web uses the browser vibrate call where supported). Setting to turn it off.
+- Win animation: confetti and stars that pop in.
+- Settings: About and credits (AI-assistance line, privacy link, contact), Erase all progress.
+- Logo on the web version links to the home page.
+
 ## 0.6.0
 - Removed Dissolve and the Timed sprint mode.
 - Helpers now arrive one at a time in Levels: Swap (level 3), Rewind (5), combo meter and Paint (7), frozen blocks (10), Color Clear (12). Each is explained when it arrives. Endless has them all.

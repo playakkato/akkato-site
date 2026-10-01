@@ -146,6 +146,24 @@ button.primary{background:var(--accent); border-color:var(--accent); color:#fff}
 .lv.cur{border-color:var(--accent); box-shadow:inset 0 0 0 1px var(--accent)}
 .note{grid-column:1 / -1; color:var(--muted); font-size:.8rem}
 
+html[data-bg=meadow] body{background-image:linear-gradient(rgba(110,180,100,.2),rgba(110,180,100,.2))}
+html[data-bg=shore] body{background-image:linear-gradient(rgba(80,170,190,.2),rgba(80,170,190,.2))}
+html[data-bg=dusk] body{background-image:linear-gradient(rgba(140,100,190,.2),rgba(140,100,190,.2))}
+html[data-bg=blossom] body{background-image:linear-gradient(rgba(230,130,160,.2),rgba(230,130,160,.2))}
+#ovBody a{color:var(--accent); font-weight:700}
+.st span.on{animation:starpop .5s cubic-bezier(.2,1.4,.4,1) both}
+.st span:nth-child(2).on{animation-delay:.15s}
+.st span:nth-child(3).on{animation-delay:.3s}
+@keyframes starpop{from{transform:scale(0) rotate(-40deg);opacity:0}to{transform:none;opacity:1}}
+#overlay .card{animation:cardin .35s ease both}
+@keyframes cardin{from{transform:translateY(10px) scale(.97);opacity:0}to{transform:none;opacity:1}}
+@media (prefers-reduced-motion:reduce){.st span.on,#overlay .card{animation:none}}
+.modes button.todo::after{content:''; display:inline-block; width:7px; height:7px; border-radius:50%; background:var(--accent); margin-left:6px; vertical-align:middle}
+.wh{grid-column:1 / -1; font-family:var(--display); font-weight:500; margin-top:6px; display:flex; justify-content:space-between; gap:8px; font-size:.95rem}
+.wh small{color:var(--muted); font-family:var(--body); font-size:.78rem}
+#settings button.danger{border-color:#C0463C; color:#C0463C}
+#settings input[type=range]{width:120px; accent-color:var(--accent); justify-self:end}
+
 #settings{background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:12px 14px; display:grid; grid-template-columns:1fr auto; gap:10px 12px; align-items:center}
 #settings label{font-weight:600; font-size:.88rem}
 select{font:600 .85rem var(--body); color:var(--fg); background:var(--bg); border:1px solid var(--line); border-radius:10px; padding:6px 8px; max-width:100%}
@@ -156,7 +174,7 @@ select{font:600 .85rem var(--body); color:var(--fg); background:var(--bg); borde
 
 <div class="col">
   <header>
-    <h1>Akkato</h1>
+    <h1><a href="/" aria-label="Akkato home page" style="color:inherit;text-decoration:none">Akkato</a></h1>
     <div class="scores">
       <div class="stat"><span>Score</span><b id="score">0</b></div>
       <div class="stat"><span id="lab2">Level</span><b id="stat2">1</b></div>
@@ -166,6 +184,7 @@ select{font:600 .85rem var(--body); color:var(--fg); background:var(--bg); borde
   <div class="modes" role="group" aria-label="Mode">
     <button id="mLevels" type="button" aria-pressed="true">Levels</button>
     <button id="mEndless" type="button" aria-pressed="false">Endless</button>
+    <button id="mDaily" type="button" aria-pressed="false">Daily</button>
   </div>
 
   <div class="status">
@@ -227,12 +246,25 @@ select{font:600 .85rem var(--body); color:var(--fg); background:var(--bg); borde
       <option value="light">Light</option>
       <option value="dark">Dark</option>
     </select>
-    <label for="soundbox">Sound</label>
+    <label for="soundbox">Sound effects</label>
     <input id="soundbox" type="checkbox" checked>
+    <label for="musicbox">Soft background music</label>
+    <input id="musicbox" type="checkbox" checked>
+    <label for="volrange">Volume</label>
+    <input id="volrange" type="range" min="0" max="100" step="5" value="60" aria-label="Volume">
+    <label for="hapticbox">Vibration on pops and blasts</label>
+    <input id="hapticbox" type="checkbox" checked>
+    <label for="bgsel">Background</label>
+    <select id="bgsel"></select>
+    <div class="note" id="starNote"></div>
     <label for="challengebox">Endless challenge: a block freezes every few moves</label>
     <input id="challengebox" type="checkbox">
     <label for="howBtn">How to play</label>
     <button id="howBtn" type="button">Show</button>
+    <label for="credBtn">About, credits and privacy</label>
+    <button id="credBtn" type="button">Show</button>
+    <label for="resetAll">Erase all progress</label>
+    <button id="resetAll" type="button" class="danger">Reset</button>
     <div class="note">Plays offline with no ads. Your progress is saved on this device.</div>
     <div class="note" id="verNote">Akkato <span id="verNum"></span></div>
   </div>
@@ -266,20 +298,25 @@ select{font:600 .85rem var(--body); color:var(--fg); background:var(--bg); borde
   var tool=null, sel=null, onOverlay=null;
   var paletteKey='default', colors=PALETTES['default'].slice(), bigShapes=false;
   var boardCol='#ccc', fgCol='#000';
-  var soundOn=true, actx=null;
+  var soundOn=true, actx=null, masterGain=null, musicGain=null, musicTimer=null, musicOn=true, volume=0.6, hapticOn=true;
+  var rngState=null, dailyKey='', bgKey='default', bonusStars=0, TOTAL_LEVELS=60;
   var hintDelay=10, idleT=0, hintMove=null;
   var startMoves=18, onOverlay2=null, starsMap={}, tips={}, tutDone=false;
 
-  function rnd(n){return Math.floor(Math.random()*n)}
+  function rnd(n){
+    if(rngState!==null){ rngState=(Math.imul(rngState,1664525)+1013904223)>>>0; return Math.floor(rngState/4294967296*n); }
+    return Math.floor(Math.random()*n);
+  }
+  function lvl(){ return mode==='levels'||mode==='daily'; }
   function safeGet(k){try{return localStorage.getItem(k)}catch(e){return null}}
   function safeSet(k,v){try{localStorage.setItem(k,v)}catch(e){}}
 
   /* ---------- saved settings ---------- */
   best=parseInt(safeGet('eb-best')||'0',10)||0;
   maxLevel=Math.max(1,parseInt(safeGet('eb-level')||'1',10)||1);
-  level=maxLevel;
+  maxLevel=Math.min(60,maxLevel); level=maxLevel;
   var sm=safeGet('eb-mode');
-  mode=sm==='endless'?'endless':'levels';
+  mode=(sm==='endless'||sm==='daily')?sm:'levels';
   soundOn=safeGet('eb-sound')!=='off';
   var sp=safeGet('eb-palette'); if(sp&&PALETTES[sp]) paletteKey=sp;
   bigShapes=safeGet('eb-big')==='1';
@@ -289,6 +326,11 @@ select{font:600 .85rem var(--body); color:var(--fg); background:var(--bg); borde
   try{ tips=JSON.parse(safeGet('eb-tips')||'{}')||{}; }catch(e){ tips={}; }
   tutDone=safeGet('eb-tut')==='1';
   challenge=safeGet('eb-challenge')==='1';
+  musicOn=safeGet('eb-music')!=='off';
+  var sv=parseFloat(safeGet('eb-vol')); if(isFinite(sv)) volume=Math.min(1,Math.max(0,sv/100));
+  hapticOn=safeGet('eb-haptic')!=='off';
+  bgKey=safeGet('eb-bg')||'default';
+  bonusStars=parseInt(safeGet('eb-bonus')||'0',10)||0;
 
   function applyTheme(t){
     var root=document.documentElement;
@@ -314,48 +356,170 @@ select{font:600 .85rem var(--body); color:var(--fg); background:var(--bg); borde
 
   /* ---------- audio ---------- */
   function ensureAudio(){
-    if(actx||!soundOn) return;
-    try{ var AC=window.AudioContext||window.webkitAudioContext; if(AC) actx=new AC(); }catch(e){}
+    if(!actx&&(soundOn||musicOn)){
+      try{
+        var AC=window.AudioContext||window.webkitAudioContext;
+        if(AC){
+          actx=new AC();
+          masterGain=actx.createGain(); masterGain.gain.value=volume; masterGain.connect(actx.destination);
+          musicGain=actx.createGain(); musicGain.gain.value=0.5; musicGain.connect(masterGain);
+        }
+      }catch(e){}
+    }
+    if(actx&&actx.state==='suspended'){ try{ actx.resume(); }catch(e){} }
+    startMusic();
   }
-  function tone(freq,dur,vol){
+  function tone(freq,dur,vol,type,glideFrom){
     if(!soundOn||!actx) return;
     try{
       if(actx.state==='suspended') actx.resume();
       var o=actx.createOscillator(), g=actx.createGain(), t=actx.currentTime;
-      o.type='sine'; o.frequency.value=freq;
+      o.type=type||'sine';
+      if(glideFrom){ o.frequency.setValueAtTime(glideFrom,t); o.frequency.exponentialRampToValueAtTime(freq,t+0.07); }
+      else o.frequency.value=freq;
       g.gain.setValueAtTime(0.0001,t);
       g.gain.exponentialRampToValueAtTime(vol,t+0.012);
       g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
-      o.connect(g); g.connect(actx.destination);
+      o.connect(g); g.connect(masterGain||actx.destination);
       o.start(t); o.stop(t+dur+0.02);
     }catch(e){}
   }
+  function bell(f,vol){ tone(f,1.2,vol); tone(f*2.76,0.5,vol*0.22); }
   function popSound(n){
-    var i=Math.min(NOTES.length-1,n-2);
-    tone(NOTES[i],0.35,0.16);
-    if(n>=5) tone(NOTES[i]*1.5,0.3,0.07);
+    var i=Math.min(NOTES.length-1,n-2), f=NOTES[i];
+    tone(f,0.4,0.15,'sine',f*1.7);
+    tone(f*2,0.25,0.035,'triangle');
+    if(n>=5) tone(f*1.5,0.35,0.06);
+    haptic(n>=5?'medium':'light');
   }
+  function winChime(){
+    var seq=[523.25,659.25,783.99,1046.5,1318.5];
+    for(var i=0;i<seq.length;i++) (function(f,d){ setTimeout(function(){ bell(f,0.11); },d); })(seq[i],i*130);
+  }
+  function blastSound(chain){
+    tone(55,0.5,0.22,'sine',150);
+    tone(196,0.5,0.14); tone(392,0.35,0.08);
+    if(chain>1) setTimeout(function(){ tone(523.25,0.4,0.1); },120);
+    haptic(chain>1?'heavy':'medium');
+  }
+  /* Vibration: the Android app uses the native haptics plugin when it is present, otherwise the browser vibrate call. */
+  function haptic(kind){
+    if(!hapticOn) return;
+    try{
+      var H=window.Capacitor&&window.Capacitor.Plugins&&window.Capacitor.Plugins.Haptics;
+      if(H&&H.impact){
+        if(kind==='success'&&H.notification) H.notification({type:'SUCCESS'});
+        else H.impact({style:kind==='heavy'?'HEAVY':(kind==='medium'?'MEDIUM':'LIGHT')});
+        return;
+      }
+      if(navigator.vibrate) navigator.vibrate(kind==='success'?[20,60,20,60,40]:(kind==='heavy'?[30,40,30]:(kind==='medium'?18:10)));
+    }catch(e){}
+  }
+  /* Soft generative background music: slow sine notes from a pentatonic scale over a low, shifting drone. */
+  var PENT=[261.63,293.66,329.63,392,440,523.25,587.33,659.25], DRONE=[130.81,98,110,146.83], musicStep=0;
+  function musicNote(f,dur,vol){
+    if(!actx||!musicGain) return;
+    try{
+      var o=actx.createOscillator(), g=actx.createGain(), t=actx.currentTime;
+      o.type='sine'; o.frequency.value=f; o.detune.value=(Math.random()-0.5)*8;
+      g.gain.setValueAtTime(0.0001,t); g.gain.linearRampToValueAtTime(vol,t+dur*0.35); g.gain.linearRampToValueAtTime(0.0001,t+dur);
+      o.connect(g); g.connect(musicGain); o.start(t); o.stop(t+dur+0.05);
+    }catch(e){}
+  }
+  function musicTick(){
+    musicTimer=null;
+    if(!musicOn||!actx||document.hidden) return;
+    if(musicStep%4===0) musicNote(DRONE[Math.floor(musicStep/4)%DRONE.length],9,0.06);
+    var n=1+(Math.random()<0.4?1:0);
+    for(var i=0;i<n;i++) musicNote(PENT[Math.floor(Math.random()*PENT.length)]*(Math.random()<0.25?0.5:1),5.5,0.028);
+    musicStep++;
+    musicTimer=setTimeout(musicTick,2600+Math.random()*1800);
+  }
+  function startMusic(){ if(musicOn&&actx&&!musicTimer) musicTick(); }
+  function stopMusic(){ if(musicTimer){ clearTimeout(musicTimer); musicTimer=null; } }
 
   /* ---------- level definitions ---------- */
   /* Levels are tuned to feel unhurried: every pop is worth less (levelPts grows slowly with group size,
      so one huge group cannot win a level) and there are more moves. Raise or lower the targets in
      levelDef to make levels harder or easier. */
   var LV_SCALE=0.4;
-  function scaled(v){ return mode==='levels' ? Math.max(1,Math.round(v*LV_SCALE)) : v; }
+  function scaled(v){ return lvl() ? Math.max(1,Math.round(v*LV_SCALE)) : v; }
   function blastSize(chain){ return chain>=3?7:5; }
   function levelPts(n){ return Math.round(n*3+n*(n-1)*0.3); }
   function levelDef(n){
     var ncol=n<3?3:(n<7?4:5);
     var moves=Math.min(40,30+Math.floor(n/2));
+    if(n>30) moves=Math.max(34,moves-Math.floor((n-30)/6));
+    var late=Math.max(0,n-25);
     if(n%2===1){
       /* Targets were set from bot playthroughs: more colors means smaller groups, so lower point goals. */
       var target=ncol===3?650:(ncol===4?450+20*(n-3):Math.min(520,300+12*(n-7)));
+      if(late) target+=3*late;
       return {ncol:ncol,moves:moves,type:'score',target:target};
     }
     /* Collect goals: with 5 colors a single color is rarer, so the goal is about 30% smaller. */
     var ct=Math.round((12+3*n)*1.3);
-    ct=ncol===5?Math.min(50,Math.round(ct*0.7)):Math.min(70,ct);
+    ct=ncol===5?Math.min(40,Math.round(ct*0.7)):Math.min(70,ct);
     return {ncol:ncol,moves:moves+2,type:'collect',color:(n/2-1)%ncol,target:ct};
+  }
+
+  /* ---------- worlds, stars, backgrounds, daily challenge ---------- */
+  var WORLDS=[
+    {name:'Meadow',blurb:'Slow and easy. Learn the blocks and the helpers.'},
+    {name:'Shoreline',blurb:'Frozen blocks wash in. Pop beside them to thaw them.'},
+    {name:'Grove',blurb:'Bigger goals, same calm. Try chaining a few bombs.'},
+    {name:'Canyon',blurb:'A little tighter on moves. Plan one step ahead.'},
+    {name:'Frostfield',blurb:'More ice than ever. Thaw it, then clear the board.'},
+    {name:'Night Garden',blurb:'The last ten. Take all the time you like.'}];
+  function worldOf(n){ return Math.min(WORLDS.length-1,Math.floor((n-1)/10)); }
+  function worldStars(w){ var t=0; for(var n=w*10+1;n<=w*10+10;n++) t+=starsMap[n]||0; return t; }
+  function starTotal(){ var t=bonusStars; for(var k in starsMap) t+=starsMap[k]||0; return t; }
+  var BGS=[{k:'default',name:'Sky',at:0},{k:'meadow',name:'Meadow',at:12},{k:'shore',name:'Shoreline',at:30},{k:'dusk',name:'Dusk',at:55},{k:'blossom',name:'Blossom',at:85}];
+  function bgUnlocked(b){ return starTotal()>=b.at; }
+  function applyBg(){
+    var ok=false; for(var i=0;i<BGS.length;i++) if(BGS[i].k===bgKey&&bgUnlocked(BGS[i])) ok=true;
+    if(!ok) bgKey='default';
+    document.documentElement.setAttribute('data-bg',bgKey);
+  }
+  function buildBgSelect(){
+    var sel=$('bgsel'); sel.innerHTML='';
+    for(var i=0;i<BGS.length;i++){
+      var o=document.createElement('option'), un=bgUnlocked(BGS[i]);
+      o.value=BGS[i].k; o.textContent=BGS[i].name+(un?'':' ('+BGS[i].at+' stars)'); o.disabled=!un;
+      sel.appendChild(o);
+    }
+    applyBg(); sel.value=bgKey;
+    var nxt=null; for(var j=0;j<BGS.length;j++) if(!bgUnlocked(BGS[j])){ nxt=BGS[j]; break; }
+    $('starNote').textContent='Stars collected: '+starTotal()+(nxt?'. Next background at '+nxt.at+' stars.':'. All backgrounds unlocked.');
+  }
+  function unlockNote(before){
+    var after=starTotal(), names=[];
+    for(var i=0;i<BGS.length;i++) if(BGS[i].at>before&&BGS[i].at<=after) names.push(BGS[i].name);
+    buildBgSelect();
+    return names.length?' New background unlocked: '+names.join(', ')+'. Find it in Settings.':'';
+  }
+  function dateKey(){
+    var d=new Date();
+    return d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2);
+  }
+  function hashStr(t){ var h=2166136261; for(var i=0;i<t.length;i++){ h^=t.charCodeAt(i); h=Math.imul(h,16777619); } return h>>>0; }
+  function daysBetween(a,b){
+    function ms(k){ var p=k.split('-'); return Date.UTC(+p[0],+p[1]-1,+p[2]); }
+    return Math.round((ms(b)-ms(a))/864e5);
+  }
+  function dailyDef(key){
+    var dn=6+(hashStr(key)%9), d=levelDef(dn);
+    d.dn=dn; d.ice=dn>=10?Math.min(8,3+(dn-10)):0;
+    return d;
+  }
+  function loadDaily(){
+    var d={}; try{ d=JSON.parse(safeGet('eb-daily')||'{}')||{}; }catch(e){ d={}; }
+    return {last:typeof d.last==='string'?d.last:'',done:typeof d.done==='string'?d.done:'',streak:+d.streak||0,best:+d.best||0,total:+d.total||0};
+  }
+  function currentStreak(){
+    var d=loadDaily(); if(!d.last) return 0;
+    var diff=daysBetween(d.last,dateKey());
+    return (diff>=0&&diff<=2)?d.streak:0;
   }
 
   /* ---------- grid ---------- */
@@ -492,7 +656,7 @@ select{font:600 .85rem var(--body); color:var(--fg); background:var(--bg); borde
   }
   function popValue(n,colorIdx){
     var v=n*(n-1)*5;
-    if(mode==='levels'&&goal&&goal.type==='collect'){
+    if(lvl()&&goal&&goal.type==='collect'){
       v=(colorIdx===goal.color)?(n*40+n*(n-1)*2):(n*(n-1));
     }
     if(n>=7) v+=90;
@@ -500,7 +664,7 @@ select{font:600 .85rem var(--body); color:var(--fg); background:var(--bg); borde
   }
   function findBestMove(){
     var seen={}, bestM=null;
-    var collect=(mode==='levels'&&goal&&goal.type==='collect');
+    var collect=(lvl()&&goal&&goal.type==='collect');
     for(var c=0;c<COLS;c++) for(var r=0;r<ROWS;r++){
       var b=grid[c][r]; if(!b||seen[c+','+r]) continue;
       var cand=null;
@@ -558,7 +722,7 @@ select{font:600 .85rem var(--body); color:var(--fg); background:var(--bg); borde
     if(tool==='swap') return 'Swap: tap a block, then a neighbor. It turns off after one swap.';
     if(tool==='paint') return 'Paint: tap a block and '+PAINT_SIZE+' blocks around it take its color.';
     if(tool==='clear') return 'Color Clear: tap a block to remove every block of that color.';
-    return mode==='levels'
+    return lvl()
       ? 'Tap a group of 2 or more. Pop 7+ to make a bomb.'
       : (challenge ? 'Endless challenge: a block freezes every few moves. Pop next to it to thaw it.' : 'Endless: no limits. You earn a swap every 400 points.');
   }
@@ -572,9 +736,9 @@ select{font:600 .85rem var(--body); color:var(--fg); background:var(--bg); borde
   }
   function updateGoalText(){
     var gt=$('goaltext');
-    if(mode==='levels' && goal){
+    if(lvl() && goal){
       var prog=goal.type==='score'?score:collected;
-      gt.innerHTML='Level '+level+': '+goalLabel()+' ('+Math.min(prog,goal.target)+'/'+goal.target+')';
+      gt.innerHTML=(mode==='daily'?'Daily challenge':'Level '+level)+': '+goalLabel()+' ('+Math.min(prog,goal.target)+'/'+goal.target+')';
     } else {
       gt.textContent='Endless: pop at your own pace';
     }
@@ -598,13 +762,14 @@ select{font:600 .85rem var(--body); color:var(--fg); background:var(--bg); borde
   function updateHUD(){
     elScore.textContent=score;
     $('fill').parentNode.classList.remove('low');
-    if(mode==='levels'){
-      elLab2.textContent='Level'; elStat2.textContent=level;
+    if(lvl()){
+      if(mode==='daily'){ elLab2.textContent='Streak'; elStat2.textContent=currentStreak(); }
+      else { elLab2.textContent='Level'; elStat2.textContent=level; }
       $('movesChip').hidden=false;
       $('moves').textContent=movesLeft;
       var prog=goal.type==='score'?score:collected;
       $('fill').style.width=Math.min(100,Math.round(prog/goal.target*100))+'%';
-      setResetLabel('Restart level');
+      setResetLabel(mode==='daily'?'Restart today\'s challenge':'Restart level');
     } else {
       elLab2.textContent='Best'; elStat2.textContent=best;
       $('movesChip').hidden=true;
@@ -635,6 +800,8 @@ select{font:600 .85rem var(--body); color:var(--fg); background:var(--bg); borde
     $('mLevels').setAttribute('aria-pressed',mode==='levels');
     $('levelsBtn').hidden=(mode!=='levels');
     $('mEndless').setAttribute('aria-pressed',mode==='endless');
+    $('mDaily').setAttribute('aria-pressed',mode==='daily');
+    $('mDaily').classList.toggle('todo',loadDaily().done!==dateKey());
     updateMeterUI();
     updateGoalText();
   }
@@ -666,7 +833,7 @@ select{font:600 .85rem var(--body); color:var(--fg); background:var(--bg); borde
     if(meter>=METER_MAX && grantPower()) meter=0;
   }
   function resetPowers(){
-    swapsLeft=3; paintLeft=1; clearLeft=(mode==='levels'&&level===UNLOCK.clear)?1:0; rewindLeft=2; meter=0; grantNext='paint';
+    swapsLeft=3; paintLeft=1; clearLeft=((mode==='levels'&&level===UNLOCK.clear)||mode==='daily')?1:0; rewindLeft=2; meter=0; grantNext='paint';
     undoSnap=null; endlessMoves=0;
   }
 
@@ -745,9 +912,9 @@ select{font:600 .85rem var(--body); color:var(--fg); background:var(--bg); borde
   }
 
   function saveGame(){
-    if((mode!=='levels'&&mode!=='endless')||phase!=='play'||!grid.length) return;
+    if(phase!=='play'||!grid.length) return;
     var s={v:1,level:level,score:score,movesLeft:movesLeft,startMoves:startMoves,collected:collected,
-      swaps:swapsLeft,paint:paintLeft,clr:clearLeft,rw:rewindLeft,em:endlessMoves,meter:meter,grantNext:grantNext,ncolors:ncolors,goal:goal,grid:serializeGrid()};
+      dkey:dailyKey,swaps:swapsLeft,paint:paintLeft,clr:clearLeft,rw:rewindLeft,em:endlessMoves,meter:meter,grantNext:grantNext,ncolors:ncolors,goal:goal,grid:serializeGrid()};
     safeSet('eb-save-'+mode,JSON.stringify(s));
   }
   function clearSave(m){ try{ localStorage.removeItem('eb-save-'+m); }catch(e){} }
@@ -760,9 +927,11 @@ select{font:600 .85rem var(--body); color:var(--fg); background:var(--bg); borde
     }catch(e){ return null; }
   }
   function restoreGame(s,m){
-    if(m==='levels'&&(!s.goal||!s.goal.type)) return false;
+    if(m!=='endless'&&(!s.goal||!s.goal.type)) return false;
     function num(x,d,lo,hi){x=Math.floor(Number(x)); return isFinite(x)?Math.min(hi,Math.max(lo,x)):d}
-    mode=m; level=num(s.level,1,1,100000); score=num(s.score,0,0,1e9); movesLeft=num(s.movesLeft,0,0,999);
+    mode=m; rngState=null;
+    if(m==='daily'){ dailyKey=String(s.dkey||''); rngState=hashStr(dailyKey+':'+s.score+':'+s.movesLeft); }
+    level=num(s.level,1,1,100000); score=num(s.score,0,0,1e9); movesLeft=num(s.movesLeft,0,0,999);
     startMoves=num(s.startMoves,0,0,999)||movesLeft||18; collected=num(s.collected,0,0,1e6);
     swapsLeft=num(s.swaps,3,0,99);
     paintLeft=num(s.paint,1,0,99);
@@ -770,7 +939,7 @@ select{font:600 .85rem var(--body); color:var(--fg); background:var(--bg); borde
     meter=num(s.meter,0,0,METER_MAX); grantNext=(s.grantNext==='clear')?'clear':'paint';
     ncolors=num(s.ncolors,3,3,5);
     goal=null;
-    if(m==='levels') goal={type:s.goal.type==='collect'?'collect':'score', target:num(s.goal.target,500,1,1e6), color:num(s.goal.color,0,0,4)};
+    if(m!=='endless') goal={type:s.goal.type==='collect'?'collect':'score', target:num(s.goal.target,500,1,1e6), color:num(s.goal.color,0,0,4)};
     var holes=loadGridFrom(s.grid);
     parts=[]; phase='play'; clearTool(); hideOverlay(); closePicker();
     hintMove=null; idleT=0; moving=false; needCheck=false;
@@ -780,15 +949,20 @@ select{font:600 .85rem var(--body); color:var(--fg); background:var(--bg); borde
     return true;
   }
   function enter(m){
-    var s=(m==='levels'||m==='endless')?loadSave(m):null;
+    var s=loadSave(m);
+    if(s&&m==='daily'&&s.dkey!==dateKey()){ clearSave('daily'); s=null; }
     if(s&&restoreGame(s,m)) return;
-    if(m==='levels') startLevel(maxLevel); else startEndless();
+    if(m==='levels') startLevel(maxLevel); else if(m==='daily') startDaily(); else startEndless();
   }
 
   function buildPicker(){
     var g=$('pickGrid'); g.innerHTML='';
-    var total=maxLevel+3;
-    for(var n=1;n<=total;n++){
+    for(var n=1;n<=TOTAL_LEVELS;n++){
+      if(n%10===1){
+        var w=worldOf(n), h=document.createElement('div'); h.className='wh';
+        h.innerHTML='<span>'+(w+1)+'. '+WORLDS[w].name+'</span><small>'+(n>maxLevel?'locked':'★ '+worldStars(w)+'/30')+'</small>';
+        g.appendChild(h);
+      }
       var b=document.createElement('button');
       var locked=n>maxLevel, got=starsMap[n]||0;
       b.type='button'; b.className='lv'+(n===level?' cur':''); b.disabled=locked;
@@ -808,6 +982,7 @@ select{font:600 .85rem var(--body); color:var(--fg); background:var(--bg); borde
     '<li><b>Pop groups.</b> Tap 2 or more touching blocks of the same color.</li>'+
     '<li><b>Make bombs.</b> Pop 7 or more to leave a bomb. Tap it to clear a 5 by 5 area. Bombs that touch a blast chain, and each link in the chain gets a bigger blast and more points.</li>'+
     '<li><b>New tools.</b> In Levels, helpers show up one at a time as you play, and each one is explained when it arrives.</li>'+
+    '<li><b>Daily challenge.</b> A fresh board each day, the same starting board for everyone. Finish it to grow your streak. Miss a day and your streak carries on; it only restarts after a longer break.</li>'+
     '<li><b>No rush.</b> Levels have no timer. If you pause, the game shows you a good move.</li></ul>';
   function showIntro(){
     if(!$('overlay').hidden||phase==='ready') return;
@@ -844,16 +1019,36 @@ select{font:600 .85rem var(--body); color:var(--fg); background:var(--bg); borde
     },{html:true});
   }
 
+  function showWorldIntro(){
+    var w=worldOf(level);
+    if(mode!=='levels'||level%10!==1||level<=1||tips['w-'+w]||phase!=='play'||!$('overlay').hidden) return false;
+    showOverlay('World '+(w+1)+': '+WORLDS[w].name,WORLDS[w].blurb,'Begin',function(){
+      hideOverlay(); tips['w-'+w]=1; safeSet('eb-tips',JSON.stringify(tips)); idleT=0; showNewTools();
+    });
+    return true;
+  }
+
   function startLevel(n){
+    rngState=null;
     level=n; var d=levelDef(n);
     ncolors=d.ncol; movesLeft=d.moves; startMoves=d.moves; collected=0; score=0; resetPowers();
     goal={type:d.type,target:d.target,color:d.color};
-    iceToPlace=n>=10?Math.min(12,3+Math.floor((n-10)/2)):0;
+    iceToPlace=n>=10?Math.min(8,3+Math.floor((n-10)/5)):0;
     phase='play'; clearTool(); hideOverlay(); closePicker(); clearSave('levels'); fillBoard(); updateHUD();
     say('Level '+n+(iceToPlace>0?' (some blocks are frozen)':'')+': '+(d.type==='score'?'reach '+d.target+' points.':'collect '+d.target+' '+SHAPE_NAMES[d.color]+' blocks.'),3200);
-    showNewTools();
+    if(!showWorldIntro()) showNewTools();
+  }
+  function startDaily(){
+    var key=dateKey(), d=dailyDef(key); dailyKey=key;
+    mode='daily'; level=d.dn; ncolors=d.ncol; movesLeft=d.moves; startMoves=d.moves; collected=0; score=0; resetPowers();
+    goal={type:d.type,target:d.target,color:d.color};
+    rngState=hashStr(key); iceToPlace=d.ice;
+    phase='play'; clearTool(); hideOverlay(); closePicker(); clearSave('daily'); fillBoard(); updateHUD();
+    var done=loadDaily().done===key;
+    say((done?'Today\'s challenge is done. This is just for fun. ':'Daily challenge: ')+(d.type==='score'?'reach '+d.target+' points.':'collect '+d.target+' '+SHAPE_NAMES[d.color]+' blocks.'),3600);
   }
   function startEndless(){
+    rngState=null;
     ncolors=5; score=0; goal=null; phase='play'; resetPowers();
     clearTool(); hideOverlay(); closePicker(); clearSave('endless'); fillBoard(); updateHUD();
     elHint.textContent=defaultHint();
@@ -863,24 +1058,62 @@ select{font:600 .85rem var(--body); color:var(--fg); background:var(--bg); borde
     mode=m; safeSet('eb-mode',m);
     enter(m);
   }
+  function restartCurrent(){ if(mode==='daily') startDaily(); else startLevel(level); }
+  function celebrate(k){
+    try{ if(window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches) return; }catch(e){}
+    var n=k===2?90:44;
+    for(var i=0;i<n;i++) parts.push({k:'dot',x:Math.random()*W,y:-cell*(0.5+Math.random()*2),vx:(Math.random()-0.5)*cell*2.2,vy:cell*(0.5+Math.random()*2),life:1.8+Math.random()*1.0,age:0,col:Math.floor(Math.random()*colors.length),size:cell*(0.09+Math.random()*0.09)});
+  }
+  function winDaily(earned){
+    var key=dailyKey, d=loadDaily(), first=(d.done!==key), before=starTotal();
+    var msg='You finished with '+movesLeft+' of '+startMoves+' moves left.';
+    if(first){
+      var diff=d.last?daysBetween(d.last,key):99;
+      d.streak=(diff===1||diff===2)?d.streak+1:1;
+      d.best=Math.max(d.best,d.streak); d.total++; d.last=key; d.done=key;
+      safeSet('eb-daily',JSON.stringify(d));
+      bonusStars++; safeSet('eb-bonus',String(bonusStars));
+      msg+=' Streak: '+d.streak+(d.streak===1?' day':' days')+'. Best: '+d.best+'. Days completed: '+d.total+'. +1 bonus star.';
+      if(diff===2) msg+=' You missed a day and your streak carried on.';
+      else if(diff>2&&d.total>1) msg+=' Welcome back. A new streak starts today.';
+    } else msg+=' Today\'s challenge was already done, so this one was just for fun.';
+    msg+=unlockNote(before);
+    celebrate(1); winChime(); haptic('success');
+    showOverlay('Daily complete',msg,'Back to levels',function(){ setMode('levels'); },{stars:earned,btn2:'Play again',fn2:function(){ startDaily(); }});
+    updateHUD();
+  }
+
   function checkEnd(){
-    if(mode!=='levels'||phase!=='play') return;
+    if(!lvl()||phase!=='play') return;
     var prog=goal.type==='score'?score:collected;
     if(prog>=goal.target){
       phase='won'; clearTool();
-      if(level+1>maxLevel){maxLevel=level+1; safeSet('eb-level',String(maxLevel));}
-      tone(523.25,0.4,0.14); setTimeout(function(){tone(659.25,0.4,0.14)},140); setTimeout(function(){tone(783.99,0.6,0.14)},280);
       var frac=startMoves>0?movesLeft/startMoves:0;
       var earned=frac>=0.4?3:(frac>=0.2?2:1);
+      clearSave(mode);
+      if(mode==='daily'){ winDaily(earned); return; }
+      var before=starTotal();
+      if(level<TOTAL_LEVELS&&level+1>maxLevel){maxLevel=level+1; safeSet('eb-level',String(maxLevel));}
       if((starsMap[level]||0)<earned){ starsMap[level]=earned; saveStarsMap(); }
-      clearSave('levels');
+      var w=worldOf(level), endOfWorld=(level%10===0), fin=(level>=TOTAL_LEVELS);
+      var title='Level '+level+' complete';
       var msg='You finished with '+movesLeft+' of '+startMoves+' moves left.'+(earned<3?' Finish with 40% of your moves left for 3 stars.':'');
-      showOverlay('Level '+level+' complete',msg,'Next level',function(){startLevel(level+1)},
-        {stars:earned,btn2:earned<3?'Replay':null,fn2:function(){startLevel(level)}});
+      var btn='Next level', fn=function(){startLevel(level+1)}, b2=earned<3?'Replay':null, fn2=function(){startLevel(level)};
+      if(fin){
+        title='You finished Akkato';
+        msg='You cleared all '+TOTAL_LEVELS+' levels with '+starTotal()+' stars. Thank you for playing. Endless and the Daily challenge are always here.';
+        btn='Play Endless'; fn=function(){ setMode('endless'); }; b2='Replay level '+level;
+      } else if(endOfWorld){
+        title='World complete: '+WORLDS[w].name;
+        msg='You finished '+WORLDS[w].name+' with '+worldStars(w)+' of 30 stars. Next up: '+WORLDS[w+1].name+'.';
+      }
+      msg+=unlockNote(before);
+      celebrate(fin||endOfWorld?2:1); winChime(); haptic('success');
+      showOverlay(title,msg,btn,fn,{stars:earned,btn2:b2,fn2:fn2});
       updateHUD();
     } else if(movesLeft<=0){
-      phase='lost'; clearTool(); clearSave('levels');
-      showOverlay('Out of moves','You got '+Math.min(prog,goal.target)+' of '+goal.target+'. Nothing is lost. Try it again.','Try again',function(){startLevel(level)});
+      phase='lost'; clearTool(); clearSave(mode);
+      showOverlay('Out of moves','You got '+Math.min(prog,goal.target)+' of '+goal.target+'. Nothing is lost. Try it again.','Try again',function(){restartCurrent()});
       updateHUD();
     }
   }
@@ -888,7 +1121,7 @@ select{font:600 .85rem var(--body); color:var(--fg); background:var(--bg); borde
   /* ---------- actions ---------- */
   function remove(c,r,n){
     var b=grid[c][r]; if(!b) return;
-    if(mode==='levels'&&goal&&goal.type==='collect'&&b.c===goal.color) collected++;
+    if(lvl()&&goal&&goal.type==='collect'&&b.c===goal.color) collected++;
     burst(c,r,b.c,n||6);
     grid[c][r]=null;
   }
@@ -937,9 +1170,8 @@ select{font:600 .85rem var(--body); color:var(--fg); background:var(--bg); borde
       say('Chain x'+chain+'! Linked bombs widen the blast and multiply the points.',2400);
       registerCombo();
     }
-    tone(196,0.5,0.2); tone(392,0.35,0.1);
-    if(chain>1){ setTimeout(function(){tone(523.25,0.4,0.12)},120); }
-    if(mode==='levels') movesLeft--;
+    blastSound(chain);
+    if(lvl()) movesLeft--;
     endlessTurn();
     compact(); updateHUD();
   }
@@ -977,7 +1209,7 @@ select{font:600 .85rem var(--body); color:var(--fg); background:var(--bg); borde
       var o=grid[x][y];
       if(o&&!o.bomb&&o.c===col){ remove(x,y,8); n++; }
     }
-    var pts=mode==='levels'?n*4:n*12;
+    var pts=lvl()?n*4:n*12;
     addScore(pts);
     floatText((c+0.5)*cell,(r+0.5)*cell,'+'+pts);
     clearLeft--; clearTool(); hintMove=null; idleT=0;
@@ -1051,7 +1283,7 @@ select{font:600 .85rem var(--body); color:var(--fg); background:var(--bg); borde
     var n=grp.length, colIdx=b.c;
     for(var i=0;i<grp.length;i++) remove(grp[i][0],grp[i][1],4);
     thawAround(grp);
-    var pts=mode==='levels'?levelPts(n):n*(n-1)*5;
+    var pts=lvl()?levelPts(n):n*(n-1)*5;
     addScore(pts);
     floatText((c+0.5)*cell,(r+0.5)*cell,'+'+pts);
     popSound(n);
@@ -1062,7 +1294,7 @@ select{font:600 .85rem var(--body); color:var(--fg); background:var(--bg); borde
     }
     if(n>=5) registerCombo();
     if(n<7) tip('pop','Nice! Bigger groups score more. Pop 7 or more to make a bomb.',5000);
-    if(mode==='levels') movesLeft--;
+    if(lvl()) movesLeft--;
     endlessTurn();
     compact(); updateHUD();
   }
@@ -1268,13 +1500,17 @@ select{font:600 .85rem var(--body); color:var(--fg); background:var(--bg); borde
   $('ovBtn2').addEventListener('click',function(){ ensureAudio(); var f=onOverlay2; if(f) f(); });
   $('levelsBtn').addEventListener('click',function(){ ensureAudio(); openPicker(); });
   $('pickClose').addEventListener('click',function(){ closePicker(); });
-  var APP_VERSION='0.6.0';
+  var APP_VERSION='0.7.0';
   $('verNum').textContent='v'+APP_VERSION;
   $('howBtn').addEventListener('click',function(){ showIntro(); });
-  document.addEventListener('visibilitychange',function(){ if(document.visibilityState==='hidden') saveGame(); });
+  document.addEventListener('visibilitychange',function(){
+    if(document.visibilityState==='hidden'){ saveGame(); stopMusic(); try{ if(actx&&actx.state==='running') actx.suspend(); }catch(e){} }
+    else { try{ if(actx) actx.resume(); }catch(e){} startMusic(); }
+  });
   window.addEventListener('pagehide',saveGame);
   $('mLevels').addEventListener('click',function(){ ensureAudio(); setMode('levels'); });
   $('mEndless').addEventListener('click',function(){ ensureAudio(); setMode('endless'); });
+  $('mDaily').addEventListener('click',function(){ ensureAudio(); setMode('daily'); });
   document.querySelector('.bar').addEventListener('click',function(e){ var t=e.target.closest&&e.target.closest('.tool'); if(t) t.classList.remove('fresh'); });
   $('swap').addEventListener('click',function(){
     if(moving||phase!=='play') return; ensureAudio();
@@ -1300,7 +1536,7 @@ select{font:600 .85rem var(--body); color:var(--fg); background:var(--bg); borde
   });
   $('reset').addEventListener('click',function(){
     ensureAudio();
-    if(mode==='levels') startLevel(level); else startEndless();
+    if(mode==='levels') startLevel(level); else if(mode==='daily') startDaily(); else startEndless();
   });
   $('settingsBtn').addEventListener('click',function(){
     var s=$('settings'); s.hidden=!s.hidden;
@@ -1316,6 +1552,29 @@ select{font:600 .85rem var(--body); color:var(--fg); background:var(--bg); borde
     var v=this.value; safeSet('eb-hint',v); hintDelay=v==='off'?0:parseInt(v,10); hintMove=null; idleT=0;
   });
   $('theme').addEventListener('change',function(){ safeSet('eb-theme',this.value); applyTheme(this.value); readTheme(); });
+  $('musicbox').addEventListener('change',function(){
+    musicOn=this.checked; safeSet('eb-music',musicOn?'on':'off');
+    if(musicOn){ ensureAudio(); startMusic(); } else stopMusic();
+  });
+  $('volrange').addEventListener('input',function(){
+    volume=Math.min(1,Math.max(0,(+this.value)/100)); safeSet('eb-vol',String(Math.round(volume*100)));
+    if(masterGain) masterGain.gain.value=volume;
+  });
+  $('volrange').addEventListener('change',function(){ ensureAudio(); tone(523.25,0.25,0.12); });
+  $('hapticbox').addEventListener('change',function(){ hapticOn=this.checked; safeSet('eb-haptic',hapticOn?'on':'off'); if(hapticOn) haptic('medium'); });
+  $('bgsel').addEventListener('change',function(){ bgKey=this.value; safeSet('eb-bg',bgKey); applyBg(); });
+  $('credBtn').addEventListener('click',function(){
+    if(!$('overlay').hidden) return;
+    showOverlay('About Akkato','<p>Akkato is made by one independent developer, with AI assistance: Claude, by Anthropic, helped with the code, the writing and design drafts.</p><p>No ads and no tracking. Your progress stays on this device.</p><p><a href="https://akkato.com/privacy.html" target="_blank" rel="noopener">Privacy policy</a><br><a href="mailto:hello@akkato.com">hello@akkato.com</a></p><p>Version '+APP_VERSION+'</p>','Close',function(){ hideOverlay(); },{html:true});
+  });
+  $('resetAll').addEventListener('click',function(){
+    if(!$('overlay').hidden) return;
+    showOverlay('Erase all progress?','This clears your levels, stars, daily streak and saved games on this device. Your settings stay. This cannot be undone.','Erase everything',function(){
+      var keys=['eb-best','eb-level','eb-stars','eb-tips','eb-tut','eb-daily','eb-bonus','eb-bg','eb-mode','eb-save-levels','eb-save-endless','eb-save-daily'];
+      for(var i=0;i<keys.length;i++){ try{ localStorage.removeItem(keys[i]); }catch(e){} }
+      location.reload();
+    },{btn2:'Keep my progress',fn2:function(){ hideOverlay(); }});
+  });
   $('soundbox').addEventListener('change',function(){
     soundOn=this.checked; safeSet('eb-sound',soundOn?'on':'off');
     if(soundOn){ensureAudio(); tone(440,0.2,0.1);}
@@ -1327,6 +1586,10 @@ select{font:600 .85rem var(--body); color:var(--fg); background:var(--bg); borde
   $('bigshapes').checked=bigShapes;
   $('theme').value=savedTheme;
   $('soundbox').checked=soundOn;
+  $('musicbox').checked=musicOn;
+  $('volrange').value=String(Math.round(volume*100));
+  $('hapticbox').checked=hapticOn;
+  buildBgSelect();
   $('challengebox').checked=challenge;
   $('hintsel').value=hintDelay===0?'off':String(hintDelay);
   applyTheme(savedTheme);
