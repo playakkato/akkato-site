@@ -17,17 +17,17 @@
 [hidden]{display:none!important}
 :root{
   --bg:#E9EFF2; --fg:#1E2A33; --muted:#5B6B76; --board:#D6E0E6; --panel:#F7FAFB; --line:#C2CFD7; --accent:#E8735A; --track:#C9D5DC;
-  --t-swap:#2F86CF; --t-dissolve:#8257CC; --t-paint:#E0691F;
+  --t-swap:#2F86CF; --t-dissolve:#8257CC; --t-paint:#E0691F; --t-rewind:#2BA58F; --t-clear:#C2417A;
   --display:'Fredoka','Trebuchet MS',system-ui,sans-serif;
   --body:'Nunito',system-ui,-apple-system,'Segoe UI',sans-serif;
 }
 @media (prefers-color-scheme: dark){
   :root:not([data-theme="light"]){
-    --bg:#131B21; --fg:#E6EEF2; --muted:#8FA1AD; --board:#1C2830; --panel:#1A242B; --line:#2A3841; --track:#2A3841; --t-swap:#6DB2EC; --t-dissolve:#B097E6; --t-paint:#F29A57; color-scheme:dark;
+    --bg:#131B21; --fg:#E6EEF2; --muted:#8FA1AD; --board:#1C2830; --panel:#1A242B; --line:#2A3841; --track:#2A3841; --t-swap:#6DB2EC; --t-dissolve:#B097E6; --t-paint:#F29A57; --t-rewind:#5CCBB5; --t-clear:#E87FAE; color-scheme:dark;
   }
 }
 :root[data-theme="dark"]{
-  --bg:#131B21; --fg:#E6EEF2; --muted:#8FA1AD; --board:#1C2830; --panel:#1A242B; --line:#2A3841; --track:#2A3841; --t-swap:#6DB2EC; --t-dissolve:#B097E6; --t-paint:#F29A57; color-scheme:dark;
+  --bg:#131B21; --fg:#E6EEF2; --muted:#8FA1AD; --board:#1C2830; --panel:#1A242B; --line:#2A3841; --track:#2A3841; --t-swap:#6DB2EC; --t-dissolve:#B097E6; --t-paint:#F29A57; --t-rewind:#5CCBB5; --t-clear:#E87FAE; color-scheme:dark;
 }
 html,body{min-height:100%}
 body{
@@ -111,6 +111,8 @@ button.primary{background:var(--accent); border-color:var(--accent); color:#fff}
 #swap{--t:var(--t-swap)}
 #dissolve{--t:var(--t-dissolve)}
 #paint{--t:var(--t-paint)}
+#rewind{--t:var(--t-rewind)}
+#clear{--t:var(--t-clear)}
 .tool:hover{border-color:var(--t)}
 .tool.on{background:var(--t); color:#fff; border-color:var(--t); box-shadow:0 0 0 3px color-mix(in srgb,var(--t) 30%,transparent)}
 .tool.on .count{background:var(--fg); color:var(--bg)}
@@ -195,6 +197,8 @@ select{font:600 .85rem var(--body); color:var(--fg); background:var(--bg); borde
     <button id="swap" class="tool" type="button" data-tip="Swap: trade two neighboring blocks. Does not use a move." aria-label="Swap, 3 left"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h14l-3.5-3.5M20 16H6l3.5 3.5"/></svg><span class="count" id="swapCount">3</span></button>
     <button id="dissolve" class="tool" type="button" data-tip="Dissolve: remove any one block. Does not use a move." aria-label="Dissolve, 1 left"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="5" width="10" height="10" rx="2.5" stroke-dasharray="2.6 2.6"/><circle cx="18.5" cy="7" r="1" fill="currentColor"/><circle cx="19.5" cy="13" r="1" fill="currentColor"/><circle cx="16" cy="19" r="1" fill="currentColor"/><circle cx="9" cy="19.5" r="1" fill="currentColor"/></svg><span class="count" id="dissolveCount">1</span></button>
     <button id="paint" class="tool" type="button" data-tip="Paint: tap a block and 7 blocks around it take its color. Pop them to make a bomb." aria-label="Paint, 1 left"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m19 11-8-8-8.6 8.6a2 2 0 0 0 0 2.8l5.2 5.2c.8.8 2 .8 2.8 0L19 11Z"/><path d="m5 2 5 5"/><path d="M2 13h15"/><path d="M22 20a2 2 0 1 1-4 0c0-1.6 1.7-2.4 2-4 .3 1.6 2 2.4 2 4Z"/></svg><span class="count" id="paintCount">1</span></button>
+    <button id="clear" class="tool" type="button" data-tip="Color Clear: tap a block and every block of that color is removed. Does not use a move. Earn it from the combo meter." aria-label="Color Clear, 0 left"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3.2"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M18.4 5.6l-2.1 2.1M7.7 16.3l-2.1 2.1"/></svg><span class="count" id="clearCount">0</span></button>
+    <button id="rewind" class="tool" type="button" data-tip="Rewind: undo your last move and get the moves back." aria-label="Rewind, 2 left"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg><span class="count" id="rewindCount">2</span></button>
     <button id="shuffle" class="tool util" type="button" data-tip="Shuffle: mix the colors on the board. Free, and does not use a move." aria-label="Shuffle the board"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16 3h5v5M4 20 21 3M21 16v5h-5M15 15l6 6M4 4l5 5"/></svg></button>
     <button id="reset" class="tool util" type="button" data-tip="Restart level" aria-label="Restart level"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg></button>
     <button id="levelsBtn" class="tool util" type="button" data-tip="Level select: pick a level and see your stars." aria-label="Level select"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="3.5" width="7" height="7" rx="1.8"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.8"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.8"/><rect x="13.5" y="13.5" width="7" height="7" rx="1.8"/></svg></button>
@@ -225,6 +229,8 @@ select{font:600 .85rem var(--body); color:var(--fg); background:var(--bg); borde
     </select>
     <label for="soundbox">Sound</label>
     <input id="soundbox" type="checkbox" checked>
+    <label for="challengebox">Endless challenge: a block freezes every few moves</label>
+    <input id="challengebox" type="checkbox">
     <label for="tickbox">Countdown ticks in the last 10 seconds</label>
     <input id="tickbox" type="checkbox" checked>
     <label for="howBtn">How to play</label>
@@ -252,7 +258,8 @@ select{font:600 .85rem var(--body); color:var(--fg); background:var(--bg); borde
   var cell=40, W=0, H=0, dpr=1;
   var grid=[], parts=[], score=0, best=0, moving=false, needCheck=false, hintT=0, frame=0;
   var mode='levels', level=1, maxLevel=1, ncolors=3, movesLeft=18, goal=null, collected=0;
-  var swapsLeft=3, dissolveLeft=1, paintLeft=1, meter=0, grantNext='paint';
+  var swapsLeft=3, dissolveLeft=1, paintLeft=1, clearLeft=0, rewindLeft=2, meter=0, grantNext='paint';
+  var undoSnap=null, challenge=false, endlessMoves=0, iceToPlace=0;
   var phase='play'; // play | ready | won | lost | over
   var tool=null, sel=null, onOverlay=null;
   var paletteKey='default', colors=PALETTES['default'].slice(), bigShapes=false;
@@ -283,6 +290,7 @@ select{font:600 .85rem var(--body); color:var(--fg); background:var(--bg); borde
   try{ starsMap=JSON.parse(safeGet('eb-stars')||'{}')||{}; }catch(e){ starsMap={}; }
   try{ tips=JSON.parse(safeGet('eb-tips')||'{}')||{}; }catch(e){ tips={}; }
   tutDone=safeGet('eb-tut')==='1';
+  challenge=safeGet('eb-challenge')==='1';
 
   function applyTheme(t){
     var root=document.documentElement;
@@ -336,6 +344,7 @@ select{font:600 .85rem var(--body); color:var(--fg); background:var(--bg); borde
      levelDef to make levels harder or easier. */
   var LV_SCALE=0.4;
   function scaled(v){ return mode==='levels' ? Math.max(1,Math.round(v*LV_SCALE)) : v; }
+  function blastSize(chain){ return chain>=3?7:5; }
   function levelPts(n){ return Math.round(n*3+n*(n-1)*0.3); }
   function levelDef(n){
     var ncol=n<3?3:(n<7?4:5);
@@ -345,12 +354,15 @@ select{font:600 .85rem var(--body); color:var(--fg); background:var(--bg); borde
       var target=ncol===3?650:(ncol===4?450+20*(n-3):Math.min(520,300+12*(n-7)));
       return {ncol:ncol,moves:moves,type:'score',target:target};
     }
-    return {ncol:ncol,moves:moves+2,type:'collect',color:(n/2-1)%ncol,target:Math.min(70,Math.round((12+3*n)*1.3))};
+    /* Collect goals: with 5 colors a single color is rarer, so the goal is about 30% smaller. */
+    var ct=Math.round((12+3*n)*1.3);
+    ct=ncol===5?Math.min(50,Math.round(ct*0.7)):Math.min(70,ct);
+    return {ncol:ncol,moves:moves+2,type:'collect',color:(n/2-1)%ncol,target:ct};
   }
   function timeBonus(n){ return n>=10?4:(n>=7?3:(n>=5?2:(n>=4?1:0))); }
 
   /* ---------- grid ---------- */
-  function newBlock(){return {c:rnd(ncolors),bomb:false,y:0,vy:0,s:1,ox:0,oy:0}}
+  function newBlock(){return {c:rnd(ncolors),bomb:false,ice:false,y:0,vy:0,s:1,ox:0,oy:0}}
 
   function fillBoard(){
     grid=[];
@@ -362,8 +374,33 @@ select{font:600 .85rem var(--body); color:var(--fg); background:var(--bg); borde
         grid[c][r]=b;
       }
     }
+    if(iceToPlace>0){ freezeRandom(iceToPlace); iceToPlace=0; }
     parts=[]; moving=true; needCheck=false; sel=null; hintMove=null; idleT=0;
     if(!hasMoves()) reshuffleColors();
+  }
+
+  /* Frozen (ice) blocks cannot be tapped or matched. Popping a group next to one thaws it. */
+  function freezeRandom(k){
+    var pool=[];
+    for(var c=0;c<COLS;c++) for(var r=0;r<ROWS;r++){ var b=grid[c]&&grid[c][r]; if(b&&!b.bomb&&!b.ice) pool.push(b); }
+    for(var i=0;i<k&&pool.length;i++){
+      var j=rnd(pool.length), blk=pool.splice(j,1)[0];
+      blk.ice=true; blk.s=1.25;
+    }
+  }
+  function thawAround(cells){
+    var n=0;
+    for(var i=0;i<cells.length;i++){
+      var nb=[[cells[i][0]+1,cells[i][1]],[cells[i][0]-1,cells[i][1]],[cells[i][0],cells[i][1]+1],[cells[i][0],cells[i][1]-1]];
+      for(var j=0;j<4;j++){
+        var x=nb[j][0], y=nb[j][1];
+        if(x<0||y<0||x>=COLS||y>=ROWS) continue;
+        var o=grid[x][y];
+        if(o&&o.ice){ o.ice=false; o.s=1.3; burst(x,y,o.c,5); n++; }
+      }
+    }
+    if(n>0){ tone(880,0.12,0.08); tone(1175,0.12,0.06); }
+    return n;
   }
 
   function compact(){
@@ -383,7 +420,7 @@ select{font:600 .85rem var(--body); color:var(--fg); background:var(--bg); borde
   }
 
   function cluster(c,r){
-    var b=grid[c][r]; if(!b||b.bomb) return [];
+    var b=grid[c][r]; if(!b||b.bomb||b.ice) return [];
     var seen={}, out=[], stack=[[c,r]];
     seen[c+','+r]=1;
     while(stack.length){
@@ -396,7 +433,7 @@ select{font:600 .85rem var(--body); color:var(--fg); background:var(--bg); borde
         var k=nx+','+ny;
         if(seen[k]) continue;
         var o=grid[nx][ny];
-        if(o&&!o.bomb&&o.c===b.c){seen[k]=1; stack.push([nx,ny]);}
+        if(o&&!o.bomb&&!o.ice&&o.c===b.c){seen[k]=1; stack.push([nx,ny]);}
       }
     }
     return out;
@@ -406,15 +443,16 @@ select{font:600 .85rem var(--body); color:var(--fg); background:var(--bg); borde
     for(var c=0;c<COLS;c++) for(var r=0;r<ROWS;r++){
       var b=grid[c][r]; if(!b) continue;
       if(b.bomb) return true;
-      if(c+1<COLS&&grid[c+1][r]&&!grid[c+1][r].bomb&&grid[c+1][r].c===b.c) return true;
-      if(r+1<ROWS&&grid[c][r+1]&&!grid[c][r+1].bomb&&grid[c][r+1].c===b.c) return true;
+      if(b.ice) continue;
+      if(c+1<COLS&&grid[c+1][r]&&!grid[c+1][r].bomb&&!grid[c+1][r].ice&&grid[c+1][r].c===b.c) return true;
+      if(r+1<ROWS&&grid[c][r+1]&&!grid[c][r+1].bomb&&!grid[c][r+1].ice&&grid[c][r+1].c===b.c) return true;
     }
     return false;
   }
 
   function reshuffleColors(){
     var list=[];
-    for(var c=0;c<COLS;c++) for(var r=0;r<ROWS;r++) if(grid[c][r]&&!grid[c][r].bomb) list.push(grid[c][r]);
+    for(var c=0;c<COLS;c++) for(var r=0;r<ROWS;r++) if(grid[c][r]&&!grid[c][r].bomb&&!grid[c][r].ice) list.push(grid[c][r]);
     for(var t=0;t<30;t++){
       var cols=list.map(function(b){return b.c});
       for(var i=cols.length-1;i>0;i--){var j=rnd(i+1),tmp=cols[i];cols[i]=cols[j];cols[j]=tmp;}
@@ -428,7 +466,7 @@ select{font:600 .85rem var(--body); color:var(--fg); background:var(--bg); borde
   // Simulated board: m[c][r] = -1 empty, 0..4 color, 100 bomb. Gravity only, no refill.
   function snapshot(){
     var m=[];
-    for(var c=0;c<COLS;c++){ m[c]=[]; for(var r=0;r<ROWS;r++){ var b=grid[c][r]; m[c][r]=!b?-1:(b.bomb?100:b.c); } }
+    for(var c=0;c<COLS;c++){ m[c]=[]; for(var r=0;r<ROWS;r++){ var b=grid[c][r]; m[c][r]=!b?-1:(b.bomb?100:(b.ice?150:b.c)); } }
     return m;
   }
   function gravity(m){
@@ -477,8 +515,9 @@ select{font:600 .85rem var(--body); color:var(--fg); background:var(--bg); borde
           var p=queue.shift(), k=p[0]+','+p[1];
           if(done[k]) continue; done[k]=1; chain++;
           var cnt=0;
-          var wx=Math.max(0,Math.min(COLS-3,p[0]-1)), wy=Math.max(0,Math.min(ROWS-3,p[1]-1));
-          for(var dx=0;dx<3;dx++) for(var dy=0;dy<3;dy++){
+          var hsz=blastSize(chain), hhalf=(hsz-1)/2;
+          var wx=Math.max(0,Math.min(COLS-hsz,p[0]-hhalf)), wy=Math.max(0,Math.min(ROWS-hsz,p[1]-hhalf));
+          for(var dx=0;dx<hsz;dx++) for(var dy=0;dy<hsz;dy++){
             var x=wx+dx, y=wy+dy;
             if(x<0||y<0||x>=COLS||y>=ROWS) continue;
             var o=grid[x][y]; if(!o) continue;
@@ -525,10 +564,11 @@ select{font:600 .85rem var(--body); color:var(--fg); background:var(--bg); borde
     if(tool==='swap') return 'Swap: tap a block, then a neighbor. It turns off after one swap.';
     if(tool==='dissolve') return 'Dissolve: tap any block to remove it.';
     if(tool==='paint') return 'Paint: tap a block and '+PAINT_SIZE+' blocks around it take its color.';
+    if(tool==='clear') return 'Color Clear: tap a block to remove every block of that color.';
     if(mode==='timed') return 'Sprint: big groups and chained bombs add seconds.';
     return mode==='levels'
       ? 'Tap a group of 2 or more. Pop 7+ to make a bomb.'
-      : 'Endless: no limits. You earn a swap every 400 points.';
+      : (challenge ? 'Endless challenge: a block freezes every few moves. Pop next to it to thaw it.' : 'Endless: no limits. You earn a swap every 400 points.');
   }
   function say(msg,ms){elHint.textContent=msg; hintT=ms||2200;}
 
@@ -596,15 +636,23 @@ select{font:600 .85rem var(--body); color:var(--fg); background:var(--bg); borde
     $('swapCount').textContent=swapsLeft;
     $('dissolveCount').textContent=dissolveLeft;
     $('paintCount').textContent=paintLeft;
+    $('clearCount').textContent=clearLeft;
+    $('rewindCount').textContent=rewindLeft;
     $('swap').setAttribute('aria-label','Swap, '+swapsLeft+' left');
     $('dissolve').setAttribute('aria-label','Dissolve, '+dissolveLeft+' left');
     $('paint').setAttribute('aria-label','Paint, '+paintLeft+' left');
+    $('clear').setAttribute('aria-label','Color Clear, '+clearLeft+' left');
+    $('rewind').setAttribute('aria-label','Rewind, '+rewindLeft+' left');
     $('swap').disabled=swapsLeft<=0 && tool!=='swap';
     $('dissolve').disabled=dissolveLeft<=0 && tool!=='dissolve';
     $('paint').disabled=paintLeft<=0 && tool!=='paint';
+    $('clear').disabled=clearLeft<=0 && tool!=='clear';
+    $('rewind').hidden=(mode==='timed');
+    $('rewind').disabled=(rewindLeft<=0||!undoSnap);
     $('swap').classList.toggle('on',tool==='swap');
     $('dissolve').classList.toggle('on',tool==='dissolve');
     $('paint').classList.toggle('on',tool==='paint');
+    $('clear').classList.toggle('on',tool==='clear');
     $('wrap').classList.toggle('tooling',tool!==null);
     $('mLevels').setAttribute('aria-pressed',mode==='levels');
     $('levelsBtn').hidden=(mode!=='levels');
@@ -626,12 +674,14 @@ select{font:600 .85rem var(--body); color:var(--fg); background:var(--bg); borde
   }
 
   /* ---------- combo meter and power-ups ---------- */
+  var POWER_SEQ=['paint','dissolve','clear'];
   function grantPower(){
-    var order=grantNext==='paint'?['paint','dissolve']:['dissolve','paint'];
-    for(var i=0;i<2;i++){
-      var t=order[i];
-      if(t==='paint'&&paintLeft<POWER_CAP){ paintLeft++; grantNext='dissolve'; say('Power-up earned: Paint splash!',2600); tone(523.25,0.3,0.12); tone(784,0.3,0.1); return true; }
-      if(t==='dissolve'&&dissolveLeft<POWER_CAP){ dissolveLeft++; grantNext='paint'; say('Power-up earned: Dissolve!',2600); tone(523.25,0.3,0.12); tone(784,0.3,0.1); return true; }
+    var start=Math.max(0,POWER_SEQ.indexOf(grantNext));
+    for(var i=0;i<POWER_SEQ.length;i++){
+      var t=POWER_SEQ[(start+i)%POWER_SEQ.length], nxt=POWER_SEQ[(start+i+1)%POWER_SEQ.length];
+      if(t==='paint'&&paintLeft<POWER_CAP){ paintLeft++; grantNext=nxt; say('Power-up earned: Paint splash!',2600); tone(523.25,0.3,0.12); tone(784,0.3,0.1); return true; }
+      if(t==='dissolve'&&dissolveLeft<POWER_CAP){ dissolveLeft++; grantNext=nxt; say('Power-up earned: Dissolve!',2600); tone(523.25,0.3,0.12); tone(784,0.3,0.1); return true; }
+      if(t==='clear'&&clearLeft<POWER_CAP){ clearLeft++; grantNext=nxt; say('Power-up earned: Color Clear!',2600); tone(523.25,0.3,0.12); tone(784,0.3,0.1); return true; }
     }
     return false;
   }
@@ -640,7 +690,8 @@ select{font:600 .85rem var(--body); color:var(--fg); background:var(--bg); borde
     if(meter>=METER_MAX && grantPower()) meter=0;
   }
   function resetPowers(){
-    swapsLeft=3; dissolveLeft=1; paintLeft=1; meter=0; grantNext='paint';
+    swapsLeft=3; dissolveLeft=1; paintLeft=1; clearLeft=0; rewindLeft=(mode==='timed'?0:2); meter=0; grantNext='paint';
+    undoSnap=null; endlessMoves=0;
   }
 
   /* ---------- starting levels / modes ---------- */
@@ -684,14 +735,43 @@ select{font:600 .85rem var(--body); color:var(--fg); background:var(--bg); borde
     var g=[];
     for(var c=0;c<COLS;c++) for(var r=0;r<ROWS;r++){
       var b=grid[c]&&grid[c][r];
-      g.push(b?(b.c+(b.bomb?10:0)):-1);
+      g.push(b?(b.c+(b.bomb?10:0)+(b.ice&&!b.bomb?20:0)):-1);
     }
     return g;
   }
+  function takeSnap(){
+    undoSnap={g:serializeGrid(),score:score,movesLeft:movesLeft,collected:collected,swaps:swapsLeft,dis:dissolveLeft,
+      paint:paintLeft,clr:clearLeft,meter:meter,grantNext:grantNext,timeLeft:timeLeft,em:endlessMoves};
+  }
+  function loadGridFrom(arr){
+    var holes=false;
+    grid=[];
+    for(var c=0;c<COLS;c++){
+      grid[c]=[];
+      for(var r=0;r<ROWS;r++){
+        var v=arr[c*ROWS+r];
+        if(typeof v!=='number'||v<0||v>=40){ grid[c][r]=null; holes=true; continue; }
+        var b=newBlock(); b.c=v%10; b.bomb=(v%20)>=10; b.ice=(v>=20&&!b.bomb); b.y=r; grid[c][r]=b;
+      }
+    }
+    return holes;
+  }
+  function doRewind(){
+    if(!undoSnap||rewindLeft<=0||phase!=='play'||moving||mode==='timed') return;
+    var u=undoSnap;
+    loadGridFrom(u.g);
+    score=u.score; movesLeft=u.movesLeft; collected=u.collected; swapsLeft=u.swaps; dissolveLeft=u.dis; paintLeft=u.paint;
+    clearLeft=u.clr; meter=u.meter; grantNext=u.grantNext; endlessMoves=u.em;
+    rewindLeft--; undoSnap=null; parts=[]; clearTool(); hintMove=null; idleT=0; needCheck=false; moving=false;
+    tone(392,0.15,0.1); tone(330,0.15,0.08); tone(262,0.2,0.08);
+    say('Rewound your last move.',2000);
+    updateHUD(); saveGame();
+  }
+
   function saveGame(){
     if((mode!=='levels'&&mode!=='endless')||phase!=='play'||!grid.length) return;
     var s={v:1,level:level,score:score,movesLeft:movesLeft,startMoves:startMoves,collected:collected,
-      swaps:swapsLeft,dis:dissolveLeft,paint:paintLeft,meter:meter,grantNext:grantNext,ncolors:ncolors,goal:goal,grid:serializeGrid()};
+      swaps:swapsLeft,dis:dissolveLeft,paint:paintLeft,clr:clearLeft,rw:rewindLeft,em:endlessMoves,meter:meter,grantNext:grantNext,ncolors:ncolors,goal:goal,grid:serializeGrid()};
     safeSet('eb-save-'+mode,JSON.stringify(s));
   }
   function clearSave(m){ try{ localStorage.removeItem('eb-save-'+m); }catch(e){} }
@@ -711,19 +791,12 @@ select{font:600 .85rem var(--body); color:var(--fg); background:var(--bg); borde
     swapsLeft=num(s.swaps,3,0,99);
     dissolveLeft=num(s.dis,1,0,99);
     paintLeft=num(s.paint,1,0,99);
-    meter=num(s.meter,0,0,METER_MAX); grantNext=s.grantNext==='dissolve'?'dissolve':'paint';
+    clearLeft=num(s.clr,0,0,99); rewindLeft=(m==='timed'?0:num(s.rw,2,0,9)); endlessMoves=num(s.em,0,0,1e6); undoSnap=null;
+    meter=num(s.meter,0,0,METER_MAX); grantNext=(s.grantNext==='dissolve'||s.grantNext==='clear')?s.grantNext:'paint';
     ncolors=num(s.ncolors,3,3,5);
     goal=null;
     if(m==='levels') goal={type:s.goal.type==='collect'?'collect':'score', target:num(s.goal.target,500,1,1e6), color:num(s.goal.color,0,0,4)};
-    grid=[]; var holes=false;
-    for(var c=0;c<COLS;c++){
-      grid[c]=[];
-      for(var r=0;r<ROWS;r++){
-        var v=s.grid[c*ROWS+r];
-        if(typeof v!=='number'||v<0||v>=20){ grid[c][r]=null; holes=true; continue; }
-        var b=newBlock(); b.c=v%10; b.bomb=v>=10; b.y=r; grid[c][r]=b;
-      }
-    }
+    var holes=loadGridFrom(s.grid);
     parts=[]; phase='play'; clearTool(); hideOverlay(); closePicker();
     hintMove=null; idleT=0; moving=false; needCheck=false;
     if(holes) compact();
@@ -758,7 +831,8 @@ select{font:600 .85rem var(--body); color:var(--fg); background:var(--bg); borde
   var HOWTO='<ul class="howto">'+
     '<li><b>Pop groups.</b> Tap 2 or more touching blocks of the same color.</li>'+
     '<li><b>Make bombs.</b> Pop 7 or more to leave a bomb. Tap it to clear a 5 by 5 area. Bombs that touch a blast chain, and each link in the chain gets a bigger blast and more points.</li>'+
-    '<li><b>Fill the combo meter.</b> Pop 5 or more at once to earn Dissolve and Paint power-ups.</li>'+
+    '<li><b>Fill the combo meter.</b> Pop 5 or more at once to earn Paint, Dissolve and Color Clear power-ups.</li>'+
+    '<li><b>New tools.</b> Rewind undoes your last move. Color Clear removes every block of one color. Frozen blocks thaw when you pop a group next to them.</li>'+
     '<li><b>No rush.</b> Levels have no timer. If you pause, the game shows you a good move.</li></ul>';
   function showIntro(){
     if(!$('overlay').hidden||phase==='ready') return;
@@ -775,8 +849,9 @@ select{font:600 .85rem var(--body); color:var(--fg); background:var(--bg); borde
     level=n; var d=levelDef(n);
     ncolors=d.ncol; movesLeft=d.moves; startMoves=d.moves; collected=0; score=0; resetPowers();
     goal={type:d.type,target:d.target,color:d.color};
+    iceToPlace=n>=10?Math.min(12,3+Math.floor((n-10)/2)):0;
     phase='play'; clearTool(); hideOverlay(); closePicker(); clearSave('levels'); fillBoard(); updateHUD();
-    say('Level '+n+': '+(d.type==='score'?'reach '+d.target+' points.':'collect '+d.target+' '+SHAPE_NAMES[d.color]+' blocks.'),3200);
+    say('Level '+n+(iceToPlace>0?' (some blocks are frozen)':'')+': '+(d.type==='score'?'reach '+d.target+' points.':'collect '+d.target+' '+SHAPE_NAMES[d.color]+' blocks.'),3200);
   }
   function startEndless(){
     ncolors=5; score=0; goal=null; phase='play'; resetPowers();
@@ -848,6 +923,7 @@ select{font:600 .85rem var(--body); color:var(--fg); background:var(--bg); borde
   }
 
   function explode(c0,r0){
+    takeSnap();
     var queue=[[c0,r0]], done={}, chain=0, pts=0;
     while(queue.length){
       var p=queue.shift(), k=p[0]+','+p[1];
@@ -855,7 +931,7 @@ select{font:600 .85rem var(--body); color:var(--fg); background:var(--bg); borde
       chain++;
       var cnt=0;
       /* A blast reaches 2 blocks out (5x5). From the third bomb in a chain it reaches 3 out (7x7). */
-      var sz=chain>=3?7:5, half=(sz-1)/2;
+      var sz=blastSize(chain), half=(sz-1)/2;
       var wx=Math.max(0,Math.min(COLS-sz,p[0]-half)), wy=Math.max(0,Math.min(ROWS-sz,p[1]-half));
       for(var dx=0;dx<sz;dx++) for(var dy=0;dy<sz;dy++){
         var x=wx+dx, y=wy+dy;
@@ -883,6 +959,7 @@ select{font:600 .85rem var(--body); color:var(--fg); background:var(--bg); borde
     tone(196,0.5,0.2); tone(392,0.35,0.1);
     if(chain>1){ setTimeout(function(){tone(523.25,0.4,0.12)},120); }
     if(mode==='levels') movesLeft--;
+    endlessTurn();
     compact(); updateHUD();
   }
 
@@ -890,6 +967,7 @@ select{font:600 .85rem var(--body); color:var(--fg); background:var(--bg); borde
     var ba=grid[a.c][a.r], bb=grid[b.c][b.r];
     if(!ba||!bb) return;
     if(!ba.bomb&&!bb.bomb&&ba.c===bb.c){ sel=null; say('Those match already. Pick a different neighbor.',1800); return; }
+    takeSnap();
     grid[a.c][a.r]=bb; grid[b.c][b.r]=ba;
     ba.y=b.r; bb.y=a.r;
     ba.ox=a.c-b.c; ba.oy=a.r-b.r;
@@ -902,6 +980,7 @@ select{font:600 .85rem var(--body); color:var(--fg); background:var(--bg); borde
 
   function dissolveBlock(c,r){
     var b=grid[c][r]; if(!b) return;
+    takeSnap();
     remove(c,r,10);
     dissolveLeft--; clearTool();
     tone(660,0.2,0.12); tone(440,0.25,0.08);
@@ -909,9 +988,40 @@ select{font:600 .85rem var(--body); color:var(--fg); background:var(--bg); borde
     compact(); updateHUD();
   }
 
+  /* Endless challenge: every 6th move, 1 to 3 blocks freeze (more as the score climbs). */
+  function endlessTurn(){
+    if(mode!=='endless'||!challenge) return;
+    endlessMoves++;
+    if(endlessMoves%6===0){
+      freezeRandom(1+Math.min(2,Math.floor(score/3000)));
+      say('A block froze. Pop next to it to thaw it.',2600);
+    }
+  }
+
+  function clearColor(c,r){
+    var b=grid[c][r]; if(!b) return;
+    if(b.bomb){ say('Bombs keep their place. Tap a regular block.',1800); return; }
+    takeSnap();
+    var col=b.c, n=0;
+    for(var x=0;x<COLS;x++) for(var y=0;y<ROWS;y++){
+      var o=grid[x][y];
+      if(o&&!o.bomb&&o.c===col){ remove(x,y,8); n++; }
+    }
+    var pts=mode==='levels'?n*4:n*12;
+    addScore(pts);
+    floatText((c+0.5)*cell,(r+0.5)*cell,'+'+pts);
+    clearLeft--; clearTool(); hintMove=null; idleT=0;
+    tone(523.25,0.2,0.12); tone(659.25,0.2,0.1); tone(880,0.3,0.1);
+    blastFx(c,r,2);
+    say('Color Clear! '+n+' '+SHAPE_NAMES[col]+' blocks are gone.',2600);
+    compact(); updateHUD();
+  }
+
   function paintSplash(c,r){
     var b=grid[c][r]; if(!b) return;
     if(b.bomb){ say('Bombs cannot be painted. Tap a regular block.',1800); return; }
+    if(b.ice){ say('That block is frozen. Pop a group next to it first.',2000); return; }
+    takeSnap();
     var region=[[c,r]], inR={}; inR[c+','+r]=1;
     while(region.length<PAINT_SIZE){
       var frontier=[];
@@ -920,7 +1030,7 @@ select{font:600 .85rem var(--body); color:var(--fg); background:var(--bg); borde
         for(var j=0;j<4;j++){
           var x=nb[j][0], y=nb[j][1];
           if(x<0||y<0||x>=COLS||y>=ROWS||inR[x+','+y]) continue;
-          var o=grid[x][y]; if(!o||o.bomb) continue;
+          var o=grid[x][y]; if(!o||o.bomb||o.ice) continue;
           frontier.push([x,y]);
         }
       }
@@ -946,6 +1056,7 @@ select{font:600 .85rem var(--body); color:var(--fg); background:var(--bg); borde
     var b=grid[c][r]; if(!b) return;
 
     if(tool==='swap'){
+      if(b.ice){ say('Frozen blocks cannot be swapped.',1800); return; }
       if(!sel){ sel={c:c,r:r}; tone(440,0.1,0.08); return; }
       if(sel.c===c&&sel.r===r){ sel=null; return; }
       if(Math.abs(sel.c-c)+Math.abs(sel.r-r)===1){ doSwap(sel,{c:c,r:r}); return; }
@@ -953,16 +1064,24 @@ select{font:600 .85rem var(--body); color:var(--fg); background:var(--bg); borde
     }
     if(tool==='dissolve'){ dissolveBlock(c,r); return; }
     if(tool==='paint'){ paintSplash(c,r); return; }
+    if(tool==='clear'){ clearColor(c,r); return; }
 
     if(b.bomb){explode(c,r); return;}
+    if(b.ice){
+      b.s=0.88; tone(150,0.12,0.08);
+      say('That block is frozen. Pop a group next to it to thaw it.',2200);
+      return;
+    }
     var grp=cluster(c,r);
     if(grp.length<2){
       b.s=0.82; tone(130,0.12,0.08);
       say('That one is on its own. Try a group, or use a swap.',1800);
       return;
     }
+    takeSnap();
     var n=grp.length, colIdx=b.c;
     for(var i=0;i<grp.length;i++) remove(grp[i][0],grp[i][1],4);
+    thawAround(grp);
     var pts=mode==='levels'?levelPts(n):n*(n-1)*5;
     addScore(pts);
     floatText((c+0.5)*cell,(r+0.5)*cell,'+'+pts);
@@ -975,6 +1094,7 @@ select{font:600 .85rem var(--body); color:var(--fg); background:var(--bg); borde
     if(n>=5) registerCombo();
     if(n<7) tip('pop','Nice! Bigger groups score more. Pop 7 or more to make a bomb.',5000);
     if(mode==='levels') movesLeft--;
+    endlessTurn();
     if(mode==='timed'){
       var bonus=timeBonus(n);
       if(bonus>0){
@@ -1043,6 +1163,18 @@ select{font:600 .85rem var(--body); color:var(--fg); background:var(--bg); borde
       }
     } else {
       glyph(b.c,cx,cy+size*0.03,size*(bigShapes?0.27:0.16));
+    }
+    if(b.ice){
+      ctx.fillStyle='rgba(222,241,255,0.55)';
+      rr(x,y,size,size,cell*0.24*b.s); ctx.fill();
+      ctx.lineWidth=Math.max(2,cell*0.06); ctx.strokeStyle='rgba(150,195,232,0.95)';
+      rr(x+ctx.lineWidth/2,y+ctx.lineWidth/2,size-ctx.lineWidth,size-ctx.lineWidth,cell*0.22*b.s); ctx.stroke();
+      ctx.lineWidth=Math.max(1.5,cell*0.04); ctx.strokeStyle='rgba(255,255,255,0.9)'; ctx.lineCap='round';
+      ctx.beginPath();
+      ctx.moveTo(x+size*0.16,y+size*0.34); ctx.lineTo(x+size*0.34,y+size*0.16);
+      ctx.moveTo(x+size*0.16,y+size*0.5); ctx.lineTo(x+size*0.5,y+size*0.16);
+      ctx.moveTo(x+size*0.66,y+size*0.84); ctx.lineTo(x+size*0.84,y+size*0.66);
+      ctx.stroke();
     }
   }
 
@@ -1203,6 +1335,17 @@ select{font:600 .85rem var(--body); color:var(--fg); background:var(--bg); borde
     if(moving||phase!=='play') return; ensureAudio();
     if(tool==='paint'||paintLeft>0) setTool('paint');
   });
+  $('clear').addEventListener('click',function(){
+    if(moving||phase!=='play') return; ensureAudio();
+    if(tool==='clear'||clearLeft>0) setTool('clear');
+  });
+  $('rewind').addEventListener('click',function(){
+    if(moving||phase!=='play') return; ensureAudio(); doRewind();
+  });
+  $('challengebox').addEventListener('change',function(){
+    challenge=this.checked; safeSet('eb-challenge',challenge?'1':'0');
+    if(mode==='endless'){ endlessMoves=0; elHint.textContent=defaultHint(); }
+  });
   $('shuffle').addEventListener('click',function(){
     if(moving||phase!=='play') return; ensureAudio(); reshuffleColors(); tone(330,0.25,0.1); say('Board mixed.',1400);
   });
@@ -1236,6 +1379,7 @@ select{font:600 .85rem var(--body); color:var(--fg); background:var(--bg); borde
   $('theme').value=savedTheme;
   $('soundbox').checked=soundOn;
   $('tickbox').checked=tickOn;
+  $('challengebox').checked=challenge;
   $('hintsel').value=hintDelay===0?'off':String(hintDelay);
   applyTheme(savedTheme);
   buildPips();
