@@ -1,6 +1,6 @@
 // Akkato offline support. Files are saved on first visit, then served from the device.
 // Bump VERSION when you publish a new game version so players get the update.
-const VERSION = 'akkato-v0.7.1';
+const VERSION = 'akkato-v0.7.2';
 const CORE = ['./', 'index.html', 'fonts.css', 'manifest.webmanifest',
   'icons/icon-192.png', 'icons/icon-512.png', 'icons/apple-touch-icon.png'];
 

@@ -4,6 +4,9 @@ Version numbers: the game, the web service worker cache and the Android versionN
 (set in package.json of akkato-app, APP_VERSION in the game file, VERSION in play/sw.js). Android versionCode is the
 workflow run number. 1.0.0 is reserved for the first store release.
 
+## 0.7.2
+- Speaker button in the button bar mutes or unmutes music and sound effects in one tap (remembered).
+
 ## 0.7.1
 - Background music was far too quiet (about 5 times too low, with a drone below what phone speakers play). Louder and higher.
 

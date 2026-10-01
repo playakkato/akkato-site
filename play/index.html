@@ -113,6 +113,8 @@ button.primary{background:var(--accent); border-color:var(--accent); color:#fff}
 #rewind{--t:var(--t-rewind)}
 #clear{--t:var(--t-clear)}
 .tool:hover{border-color:var(--t)}
+.tool.util.muted .wave{display:none}
+.tool.util:not(.muted) .xmark{display:none}
 .tool.fresh{animation:fresh 1.6s ease-in-out infinite}
 @keyframes fresh{0%,100%{box-shadow:0 0 0 0 color-mix(in srgb,var(--t) 45%,transparent)}50%{box-shadow:0 0 0 7px color-mix(in srgb,var(--t) 0%,transparent)}}
 @media (prefers-reduced-motion:reduce){.tool.fresh{animation:none; box-shadow:0 0 0 3px color-mix(in srgb,var(--t) 40%,transparent)}}
@@ -221,6 +223,7 @@ select{font:600 .85rem var(--body); color:var(--fg); background:var(--bg); borde
     <button id="shuffle" class="tool util" type="button" data-tip="Shuffle: mix the colors on the board. Free, and does not use a move." aria-label="Shuffle the board"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16 3h5v5M4 20 21 3M21 16v5h-5M15 15l6 6M4 4l5 5"/></svg></button>
     <button id="reset" class="tool util" type="button" data-tip="Restart level" aria-label="Restart level"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg></button>
     <button id="levelsBtn" class="tool util" type="button" data-tip="Level select: pick a level and see your stars." aria-label="Level select"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="3.5" width="7" height="7" rx="1.8"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.8"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.8"/><rect x="13.5" y="13.5" width="7" height="7" rx="1.8"/></svg></button>
+    <button id="muteBtn" class="tool util" type="button" data-tip="Sound: tap to mute or unmute music and sound effects." aria-label="Mute sound" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z"/><path class="wave" d="M15.5 9a4 4 0 0 1 0 6M18 6.5a7.5 7.5 0 0 1 0 11"/><path class="xmark" d="M16 9.5l5 5M21 9.5l-5 5"/></svg></button>
     <button id="settingsBtn" class="tool util" type="button" data-tip="Settings: colors, hints, theme and sound." aria-label="Settings" aria-expanded="false" aria-controls="settings"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h8M18 7h2M4 17h2M12 17h8"/><circle cx="15" cy="7" r="2.6"/><circle cx="9" cy="17" r="2.6"/></svg></button>
   </div>
 
@@ -434,6 +437,12 @@ select{font:600 .85rem var(--body); color:var(--fg); background:var(--bg); borde
     for(var i=0;i<n;i++) musicNote(PENT[Math.floor(Math.random()*PENT.length)]*(Math.random()<0.25?0.5:1),5.5,0.075);
     musicStep++;
     musicTimer=setTimeout(musicTick,2600+Math.random()*1800);
+  }
+  function updateMuteUI(){
+    var m=!soundOn&&!musicOn, b=$('muteBtn'); if(!b) return;
+    b.classList.toggle('muted',m); b.setAttribute('aria-pressed',String(m));
+    b.setAttribute('aria-label',m?'Unmute sound':'Mute sound');
+    b.setAttribute('data-tip',m?'Sound is off. Tap to turn music and effects back on.':'Sound: tap to mute music and sound effects.');
   }
   function startMusic(){ if(musicOn&&actx&&!musicTimer) musicTick(); }
   function stopMusic(){ if(musicTimer){ clearTimeout(musicTimer); musicTimer=null; } }
@@ -1500,7 +1509,7 @@ select{font:600 .85rem var(--body); color:var(--fg); background:var(--bg); borde
   $('ovBtn2').addEventListener('click',function(){ ensureAudio(); var f=onOverlay2; if(f) f(); });
   $('levelsBtn').addEventListener('click',function(){ ensureAudio(); openPicker(); });
   $('pickClose').addEventListener('click',function(){ closePicker(); });
-  var APP_VERSION='0.7.1';
+  var APP_VERSION='0.7.2';
   $('verNum').textContent='v'+APP_VERSION;
   $('howBtn').addEventListener('click',function(){ showIntro(); });
   document.addEventListener('visibilitychange',function(){
@@ -1555,6 +1564,15 @@ select{font:600 .85rem var(--body); color:var(--fg); background:var(--bg); borde
   $('musicbox').addEventListener('change',function(){
     musicOn=this.checked; safeSet('eb-music',musicOn?'on':'off');
     if(musicOn){ ensureAudio(); startMusic(); } else stopMusic();
+    updateMuteUI();
+  });
+  $('muteBtn').addEventListener('click',function(){
+    var turnOff=(soundOn||musicOn);
+    soundOn=!turnOff; musicOn=!turnOff;
+    safeSet('eb-sound',soundOn?'on':'off'); safeSet('eb-music',musicOn?'on':'off');
+    $('soundbox').checked=soundOn; $('musicbox').checked=musicOn;
+    if(turnOff) stopMusic(); else { ensureAudio(); startMusic(); tone(523.25,0.2,0.12); }
+    updateMuteUI();
   });
   $('volrange').addEventListener('input',function(){
     volume=Math.min(1,Math.max(0,(+this.value)/100)); safeSet('eb-vol',String(Math.round(volume*100)));
@@ -1576,7 +1594,7 @@ select{font:600 .85rem var(--body); color:var(--fg); background:var(--bg); borde
     },{btn2:'Keep my progress',fn2:function(){ hideOverlay(); }});
   });
   $('soundbox').addEventListener('change',function(){
-    soundOn=this.checked; safeSet('eb-sound',soundOn?'on':'off');
+    soundOn=this.checked; safeSet('eb-sound',soundOn?'on':'off'); updateMuteUI();
     if(soundOn){ensureAudio(); tone(440,0.2,0.1);}
   });
   window.addEventListener('resize',layout);
@@ -1587,6 +1605,7 @@ select{font:600 .85rem var(--body); color:var(--fg); background:var(--bg); borde
   $('theme').value=savedTheme;
   $('soundbox').checked=soundOn;
   $('musicbox').checked=musicOn;
+  updateMuteUI();
   $('volrange').value=String(Math.round(volume*100));
   $('hapticbox').checked=hapticOn;
   buildBgSelect();
