@@ -750,7 +750,7 @@ select{font:600 .85rem var(--body); color:var(--fg); background:var(--bg); borde
 
   var HOWTO='<ul class="howto">'+
     '<li><b>Pop groups.</b> Tap 2 or more touching blocks of the same color.</li>'+
-    '<li><b>Make bombs.</b> Pop 7 or more to leave a bomb. Tap it to clear a 3 by 3 area. Bombs side by side chain for bigger points.</li>'+
+    '<li><b>Make bombs.</b> Pop 7 or more to leave a bomb. Tap it to clear a 3 by 3 area. Bombs that touch a blast chain, and each link in the chain gets a bigger blast and more points.</li>'+
     '<li><b>Fill the combo meter.</b> Pop 5 or more at once to earn Dissolve and Paint power-ups.</li>'+
     '<li><b>No rush.</b> Levels have no timer. If you pause, the game shows you a good move.</li></ul>';
   function showIntro(){
@@ -832,13 +832,15 @@ select{font:600 .85rem var(--body); color:var(--fg); background:var(--bg); borde
       if(done[k]) continue; done[k]=1;
       chain++;
       var cnt=0;
-      var wx=Math.max(0,Math.min(COLS-3,p[0]-1)), wy=Math.max(0,Math.min(ROWS-3,p[1]-1));
-      for(var dx=0;dx<3;dx++) for(var dy=0;dy<3;dy++){
+      /* Chains grow: the first two blasts are 3x3, the third and later are 5x5, and from the fifth on 7x7. */
+      var sz=chain>=5?7:(chain>=3?5:3), half=(sz-1)/2;
+      var wx=Math.max(0,Math.min(COLS-sz,p[0]-half)), wy=Math.max(0,Math.min(ROWS-sz,p[1]-half));
+      for(var dx=0;dx<sz;dx++) for(var dy=0;dy<sz;dy++){
         var x=wx+dx, y=wy+dy;
         if(x<0||y<0||x>=COLS||y>=ROWS) continue;
         var b=grid[x][y]; if(!b) continue;
         if(b.bomb&&!done[x+','+y]) queue.push([x,y]);
-        remove(x,y,8); cnt++;
+        remove(x,y,Math.min(16,6+2*chain)); cnt++;
       }
       pts+=cnt*12*chain;
     }
@@ -847,7 +849,7 @@ select{font:600 .85rem var(--body); color:var(--fg); background:var(--bg); borde
     floatText((c0+0.5)*cell,(r0+0.5)*cell,'+'+pts);
     if(chain>1){
       floatText((c0+0.5)*cell,(r0+0.5)*cell-cell*0.7,'Chain x'+chain);
-      say('Chain x'+chain+'! Linked bombs multiply the points.',2400);
+      say('Chain x'+chain+'! Linked bombs widen the blast and multiply the points.',2400);
       registerCombo();
     }
     if(mode==='timed'){
