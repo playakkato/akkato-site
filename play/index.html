@@ -236,6 +236,7 @@ select{font:600 .85rem var(--body); color:var(--fg); background:var(--bg); borde
     <label for="howBtn">How to play</label>
     <button id="howBtn" type="button">Show</button>
     <div class="note">Plays offline with no ads. Your progress is saved on this device.</div>
+    <div class="note" id="verNote">Akkato <span id="verNum"></span></div>
   </div>
 </div>
 
@@ -1316,6 +1317,8 @@ select{font:600 .85rem var(--body); color:var(--fg); background:var(--bg); borde
   $('ovBtn2').addEventListener('click',function(){ ensureAudio(); var f=onOverlay2; if(f) f(); });
   $('levelsBtn').addEventListener('click',function(){ ensureAudio(); openPicker(); });
   $('pickClose').addEventListener('click',function(){ closePicker(); });
+  var APP_VERSION='0.5.0';
+  $('verNum').textContent='v'+APP_VERSION;
   $('howBtn').addEventListener('click',function(){ showIntro(); });
   document.addEventListener('visibilitychange',function(){ if(document.visibilityState==='hidden') saveGame(); });
   window.addEventListener('pagehide',saveGame);
