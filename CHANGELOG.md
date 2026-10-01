@@ -4,6 +4,9 @@ Version numbers: the game, the web service worker cache and the Android versionN
 (set in package.json of akkato-app, APP_VERSION in the game file, VERSION in play/sw.js). Android versionCode is the
 workflow run number. 1.0.0 is reserved for the first store release.
 
+## 0.7.1
+- Background music was far too quiet (about 5 times too low, with a drone below what phone speakers play). Louder and higher.
+
 ## 0.7.0
 - 60 levels in six worlds (Meadow, Shoreline, Grove, Canyon, Frostfield, Night Garden) with a world card, a world-complete moment and a finale. Late-level difficulty tuned with bot runs.
 - Daily challenge: same starting board each day, streak that forgives one missed day, +1 bonus star.

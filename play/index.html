@@ -362,7 +362,7 @@ select{font:600 .85rem var(--body); color:var(--fg); background:var(--bg); borde
         if(AC){
           actx=new AC();
           masterGain=actx.createGain(); masterGain.gain.value=volume; masterGain.connect(actx.destination);
-          musicGain=actx.createGain(); musicGain.gain.value=0.5; musicGain.connect(masterGain);
+          musicGain=actx.createGain(); musicGain.gain.value=1; musicGain.connect(masterGain);
         }
       }catch(e){}
     }
@@ -416,7 +416,7 @@ select{font:600 .85rem var(--body); color:var(--fg); background:var(--bg); borde
     }catch(e){}
   }
   /* Soft generative background music: slow sine notes from a pentatonic scale over a low, shifting drone. */
-  var PENT=[261.63,293.66,329.63,392,440,523.25,587.33,659.25], DRONE=[130.81,98,110,146.83], musicStep=0;
+  var PENT=[261.63,293.66,329.63,392,440,523.25,587.33,659.25], DRONE=[196,146.83,164.81,220], musicStep=0;
   function musicNote(f,dur,vol){
     if(!actx||!musicGain) return;
     try{
@@ -429,9 +429,9 @@ select{font:600 .85rem var(--body); color:var(--fg); background:var(--bg); borde
   function musicTick(){
     musicTimer=null;
     if(!musicOn||!actx||document.hidden) return;
-    if(musicStep%4===0) musicNote(DRONE[Math.floor(musicStep/4)%DRONE.length],9,0.06);
+    if(musicStep%4===0) musicNote(DRONE[Math.floor(musicStep/4)%DRONE.length],9,0.14);
     var n=1+(Math.random()<0.4?1:0);
-    for(var i=0;i<n;i++) musicNote(PENT[Math.floor(Math.random()*PENT.length)]*(Math.random()<0.25?0.5:1),5.5,0.028);
+    for(var i=0;i<n;i++) musicNote(PENT[Math.floor(Math.random()*PENT.length)]*(Math.random()<0.25?0.5:1),5.5,0.075);
     musicStep++;
     musicTimer=setTimeout(musicTick,2600+Math.random()*1800);
   }
@@ -1500,7 +1500,7 @@ select{font:600 .85rem var(--body); color:var(--fg); background:var(--bg); borde
   $('ovBtn2').addEventListener('click',function(){ ensureAudio(); var f=onOverlay2; if(f) f(); });
   $('levelsBtn').addEventListener('click',function(){ ensureAudio(); openPicker(); });
   $('pickClose').addEventListener('click',function(){ closePicker(); });
-  var APP_VERSION='0.7.0';
+  var APP_VERSION='0.7.1';
   $('verNum').textContent='v'+APP_VERSION;
   $('howBtn').addEventListener('click',function(){ showIntro(); });
   document.addEventListener('visibilitychange',function(){
