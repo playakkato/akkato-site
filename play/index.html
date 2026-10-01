@@ -324,13 +324,21 @@ select{font:600 .85rem var(--body); color:var(--fg); background:var(--bg); borde
   }
 
   /* ---------- level definitions ---------- */
+  /* Levels are tuned to feel unhurried: every pop is worth less (levelPts grows slowly with group size,
+     so one huge group cannot win a level) and there are more moves. Raise or lower the targets in
+     levelDef to make levels harder or easier. */
+  var LV_SCALE=0.4;
+  function scaled(v){ return mode==='levels' ? Math.max(1,Math.round(v*LV_SCALE)) : v; }
+  function levelPts(n){ return Math.round(n*3+n*(n-1)*0.3); }
   function levelDef(n){
     var ncol=n<3?3:(n<7?4:5);
-    var moves=Math.min(28,18+Math.floor(n/2));
+    var moves=Math.min(40,30+Math.floor(n/2));
     if(n%2===1){
-      return {ncol:ncol,moves:moves,type:'score',target:Math.min(4000,500+150*(n-1))};
+      /* Targets were set from bot playthroughs: more colors means smaller groups, so lower point goals. */
+      var target=ncol===3?650:(ncol===4?450+20*(n-3):Math.min(520,300+12*(n-7)));
+      return {ncol:ncol,moves:moves,type:'score',target:target};
     }
-    return {ncol:ncol,moves:moves+2,type:'collect',color:(n/2-1)%ncol,target:Math.min(50,12+3*n)};
+    return {ncol:ncol,moves:moves+2,type:'collect',color:(n/2-1)%ncol,target:Math.min(70,Math.round((12+3*n)*1.3))};
   }
   function timeBonus(n){ return n>=10?4:(n>=7?3:(n>=5?2:(n>=4?1:0))); }
 
@@ -834,6 +842,7 @@ select{font:600 .85rem var(--body); color:var(--fg); background:var(--bg); borde
       }
       pts+=cnt*12*chain;
     }
+    pts=scaled(pts);
     addScore(pts);
     floatText((c0+0.5)*cell,(r0+0.5)*cell,'+'+pts);
     if(chain>1){
@@ -929,7 +938,7 @@ select{font:600 .85rem var(--body); color:var(--fg); background:var(--bg); borde
     }
     var n=grp.length, colIdx=b.c;
     for(var i=0;i<grp.length;i++) remove(grp[i][0],grp[i][1],4);
-    var pts=n*(n-1)*5;
+    var pts=mode==='levels'?levelPts(n):n*(n-1)*5;
     addScore(pts);
     floatText((c+0.5)*cell,(r+0.5)*cell,'+'+pts);
     popSound(n);
