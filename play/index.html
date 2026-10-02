@@ -202,7 +202,7 @@ select{font:600 .85rem var(--body); color:var(--fg); background:var(--bg); borde
     <div id="stage">
       <canvas id="board" aria-label="Game board. Tap groups of two or more matching blocks to pop them."></canvas>
       <div id="flash" aria-hidden="true"></div>
-      <div id="overlay" hidden><div class="card"><h2 id="ovTitle"></h2><div id="ovStars" class="st" hidden></div><p id="ovBody"></p><div class="row"><button id="ovBtn" type="button" class="primary">Continue</button><button id="ovBtn2" type="button" hidden>Replay</button></div></div></div>
+      <div id="overlay" hidden><div class="card"><h2 id="ovTitle"></h2><div id="ovStars" class="st" hidden></div><p id="ovBody"></p><div class="row"><button id="ovBtn" type="button" class="primary">Continue</button><button id="ovBtn2" type="button" hidden>Replay</button><button id="ovShare" type="button" hidden>Share result</button></div></div></div>
       <div id="picker" hidden><div class="pickhead"><h2>Choose a level</h2><button id="pickClose" type="button">Close</button></div><div id="pickGrid"></div></div>
     </div>
   </div>
@@ -862,10 +862,38 @@ select{font:600 .85rem var(--body); color:var(--fg); background:var(--bg); borde
     var st=$('ovStars');
     if(typeof extra.stars==='number'){ st.innerHTML=starsHtml(extra.stars); st.setAttribute('aria-label',extra.stars+' of 3 stars'); st.hidden=false; }
     else st.hidden=true;
+    var sh=$('ovShare'); shareTxt=extra.share||null; sh.hidden=!shareTxt; sh.textContent='Share result';
     var b2=$('ovBtn2');
     if(extra.btn2){ b2.textContent=extra.btn2; b2.hidden=false; onOverlay2=extra.fn2||null; } else { b2.hidden=true; onOverlay2=null; }
     onOverlay=fn; $('overlay').hidden=false; setTimeout(function(){$('ovBtn').focus()},50);
   }
+  var shareTxt=null;
+  /* Sharing builds a short text on the device and hands it to the share sheet or the clipboard. Nothing is sent to us. */
+  function shareResult(text){
+    if(!text) return;
+    var btn=$('ovShare');
+    function copied(){ btn.textContent='Copied. Paste it in a message.'; }
+    function fallback(){
+      try{
+        if(navigator.clipboard&&navigator.clipboard.writeText){ navigator.clipboard.writeText(text).then(copied,legacy); return; }
+      }catch(e){}
+      legacy();
+    }
+    function legacy(){
+      try{
+        var ta=document.createElement('textarea'); ta.value=text; ta.setAttribute('readonly',''); ta.style.position='fixed'; ta.style.opacity='0';
+        document.body.appendChild(ta); ta.select(); var ok=document.execCommand('copy'); document.body.removeChild(ta);
+        if(ok) copied(); else btn.textContent='Could not copy';
+      }catch(e){ btn.textContent='Could not copy'; }
+    }
+    try{
+      var P=window.Capacitor&&window.Capacitor.Plugins&&window.Capacitor.Plugins.Share;
+      if(P&&P.share){ P.share({text:text}).catch(fallback); return; }
+      if(navigator.share){ navigator.share({text:text}).catch(function(e){ if(!e||e.name!=='AbortError') fallback(); }); return; }
+    }catch(e){}
+    fallback();
+  }
+  function starStr(n){ return ['☆☆☆','★☆☆','★★☆','★★★'][Math.max(0,Math.min(3,n))]; }
   function hideOverlay(){ $('overlay').hidden=true; onOverlay=null; onOverlay2=null; }
 
   /* ---------- stars, saved games, level picker, tutorial ---------- */
@@ -1088,7 +1116,9 @@ select{font:600 .85rem var(--body); color:var(--fg); background:var(--bg); borde
     } else msg+=' Today\'s challenge was already done, so this one was just for fun.';
     msg+=unlockNote(before);
     celebrate(1); winChime(); haptic('success');
-    showOverlay('Daily complete',msg,'Back to levels',function(){ setMode('levels'); },{stars:earned,btn2:'Play again',fn2:function(){ startDaily(); }});
+    var st=loadDaily();
+    var txt='Akkato Daily '+key+'\n'+starStr(earned)+' '+movesLeft+' of '+startMoves+' moves left'+(st.streak>1?'\nStreak: '+st.streak+' days':'')+'\nhttps://akkato.com/play/';
+    showOverlay('Daily complete',msg,'Back to levels',function(){ setMode('levels'); },{stars:earned,btn2:'Play again',fn2:function(){ startDaily(); },share:txt});
     updateHUD();
   }
 
@@ -1118,7 +1148,10 @@ select{font:600 .85rem var(--body); color:var(--fg); background:var(--bg); borde
       }
       msg+=unlockNote(before);
       celebrate(fin||endOfWorld?2:1); winChime(); haptic('success');
-      showOverlay(title,msg,btn,fn,{stars:earned,btn2:b2,fn2:fn2});
+      var txt='Akkato Level '+level+' ('+WORLDS[w].name+')\n'+starStr(earned)+' '+movesLeft+' of '+startMoves+' moves left\nhttps://akkato.com/play/';
+      if(fin) txt='I finished all '+TOTAL_LEVELS+' levels of Akkato with '+starTotal()+' stars!\nhttps://akkato.com/play/';
+      else if(endOfWorld) txt='Akkato: finished the '+WORLDS[w].name+' world with '+worldStars(w)+' of 30 stars.\nhttps://akkato.com/play/';
+      showOverlay(title,msg,btn,fn,{stars:earned,btn2:b2,fn2:fn2,share:txt});
       updateHUD();
     } else if(movesLeft<=0){
       phase='lost'; clearTool(); clearSave(mode);
@@ -1506,10 +1539,11 @@ select{font:600 .85rem var(--body); color:var(--fg); background:var(--bg); borde
     tap((e.clientX-rect.left)*(W/rect.width),(e.clientY-rect.top)*(H/rect.height));
   });
   $('ovBtn').addEventListener('click',function(){ ensureAudio(); var f=onOverlay; if(f) f(); });
+  $('ovShare').addEventListener('click',function(){ ensureAudio(); shareResult(shareTxt); });
   $('ovBtn2').addEventListener('click',function(){ ensureAudio(); var f=onOverlay2; if(f) f(); });
   $('levelsBtn').addEventListener('click',function(){ ensureAudio(); openPicker(); });
   $('pickClose').addEventListener('click',function(){ closePicker(); });
-  var APP_VERSION='0.7.2';
+  var APP_VERSION='0.8.0';
   $('verNum').textContent='v'+APP_VERSION;
   $('howBtn').addEventListener('click',function(){ showIntro(); });
   document.addEventListener('visibilitychange',function(){
