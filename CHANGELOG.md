@@ -4,6 +4,9 @@ Version numbers: the game, the web service worker cache and the Android versionN
 (set in package.json of akkato-app, APP_VERSION in the game file, VERSION in play/sw.js). Android versionCode is the
 workflow run number. 1.0.0 is reserved for the first store release.
 
+## 0.9.0
+- Block icon sets in Settings: Classic shapes, Dogs (paw, bone, bowl, ball, doghouse), Cats (cat face, fish, yarn, bell, mouse) and Nature (fire, water, leaf, wind, lightning). All original drawings; goal text shows the matching icon. Free to choose.
+
 ## 0.8.0
 - Share result button on level, world, finale and daily-challenge screens. Builds a short text on the device (level, stars, moves left, streak, link) and opens the share sheet, or copies it. Nothing is sent to us. Privacy policy updated. Android app also uses @capacitor/share.
 

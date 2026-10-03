@@ -50,6 +50,7 @@ h1{font-family:var(--display); font-weight:600; font-size:1.7rem; line-height:1;
 .status{display:flex; gap:10px; align-items:stretch}
 .goalbox{flex:1 1 auto; min-width:0; background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:8px 12px; display:flex; flex-direction:column; gap:6px; justify-content:center}
 .goaltext{font-weight:700; font-size:.88rem; overflow-wrap:anywhere}
+.goaltext .gi{height:1.25em; width:1.25em; vertical-align:-0.3em; margin-inline:2px}
 .goaltext .sw{font-size:1.05em; margin-inline:2px}
 .track{height:8px; border-radius:99px; background:var(--track); overflow:hidden}
 .track i{display:block; height:100%; width:0; background:var(--accent); border-radius:99px; transition:width .35s ease, background .3s}
@@ -235,6 +236,13 @@ select{font:600 .85rem var(--body); color:var(--fg); background:var(--bg); borde
       <option value="hc">High contrast</option>
     </select>
     <div class="swatches" id="swatches" aria-hidden="true"></div>
+    <label for="tilesel">Block icons</label>
+    <select id="tilesel">
+      <option value="classic">Classic shapes</option>
+      <option value="dog">Dogs</option>
+      <option value="cat">Cats</option>
+      <option value="nature">Nature</option>
+    </select>
     <label for="bigshapes">Larger shapes on blocks</label>
     <input id="bigshapes" type="checkbox">
     <label for="hintsel">Show a hint after a pause</label>
@@ -323,6 +331,7 @@ select{font:600 .85rem var(--body); color:var(--fg); background:var(--bg); borde
   soundOn=safeGet('eb-sound')!=='off';
   var sp=safeGet('eb-palette'); if(sp&&PALETTES[sp]) paletteKey=sp;
   bigShapes=safeGet('eb-big')==='1';
+  var stk=safeGet('eb-tiles'); if(stk==='dog'||stk==='cat'||stk==='nature') tilesKey=stk;
   var savedTheme=safeGet('eb-theme')||'auto';
   var sh=safeGet('eb-hint'); if(sh==='off') hintDelay=0; else if(sh==='6') hintDelay=6;
   try{ starsMap=JSON.parse(safeGet('eb-stars')||'{}')||{}; }catch(e){ starsMap={}; }
@@ -708,7 +717,7 @@ select{font:600 .85rem var(--body); color:var(--fg); background:var(--bg); borde
         var v=popValue(n,b.c)+fv*(collect?0.2:0.35);
         var lab;
         if(n>=7) lab='This group makes a bomb, and leaves a good follow-up.';
-        else if(collect&&b.c===goal.color) lab='Collects '+n+' '+SHAPE_NAMES[b.c]+' blocks and sets up more.';
+        else if(collect&&b.c===goal.color) lab='Collects '+n+' '+shapeName(b.c)+' blocks and sets up more.';
         else lab='Best payoff: '+n+' blocks, and it leaves a bigger group behind.';
         cand={cells:grp,value:v,label:lab};
       }
@@ -741,7 +750,7 @@ select{font:600 .85rem var(--body); color:var(--fg); background:var(--bg); borde
   function goalLabel(){
     if(!goal) return '';
     if(goal.type==='score') return 'Reach '+goal.target+' points';
-    return 'Collect '+goal.target+' <span class="sw" style="color:'+colors[goal.color]+'">'+SHAPE_CHARS[goal.color]+'</span> '+SHAPE_NAMES[goal.color]+' blocks';
+    return 'Collect '+goal.target+' '+shapeMark(goal.color)+' '+shapeName(goal.color)+' blocks';
   }
   function updateGoalText(){
     var gt=$('goaltext');
@@ -1072,7 +1081,7 @@ select{font:600 .85rem var(--body); color:var(--fg); background:var(--bg); borde
     goal={type:d.type,target:d.target,color:d.color};
     iceToPlace=n>=10?Math.min(8,3+Math.floor((n-10)/5)):0;
     phase='play'; clearTool(); hideOverlay(); closePicker(); clearSave('levels'); fillBoard(); updateHUD();
-    say('Level '+n+(iceToPlace>0?' (some blocks are frozen)':'')+': '+(d.type==='score'?'reach '+d.target+' points.':'collect '+d.target+' '+SHAPE_NAMES[d.color]+' blocks.'),3200);
+    say('Level '+n+(iceToPlace>0?' (some blocks are frozen)':'')+': '+(d.type==='score'?'reach '+d.target+' points.':'collect '+d.target+' '+shapeName(d.color)+' blocks.'),3200);
     if(!showWorldIntro()) showNewTools();
   }
   function startDaily(){
@@ -1082,7 +1091,7 @@ select{font:600 .85rem var(--body); color:var(--fg); background:var(--bg); borde
     rngState=hashStr(key); iceToPlace=d.ice;
     phase='play'; clearTool(); hideOverlay(); closePicker(); clearSave('daily'); fillBoard(); updateHUD();
     var done=loadDaily().done===key;
-    say((done?'Today\'s challenge is done. This is just for fun. ':'Daily challenge: ')+(d.type==='score'?'reach '+d.target+' points.':'collect '+d.target+' '+SHAPE_NAMES[d.color]+' blocks.'),3600);
+    say((done?'Today\'s challenge is done. This is just for fun. ':'Daily challenge: ')+(d.type==='score'?'reach '+d.target+' points.':'collect '+d.target+' '+shapeName(d.color)+' blocks.'),3600);
   }
   function startEndless(){
     rngState=null;
@@ -1257,7 +1266,7 @@ select{font:600 .85rem var(--body); color:var(--fg); background:var(--bg); borde
     clearLeft--; clearTool(); hintMove=null; idleT=0;
     tone(523.25,0.2,0.12); tone(659.25,0.2,0.1); tone(880,0.3,0.1);
     blastFx(c,r,2);
-    say('Color Clear! '+n+' '+SHAPE_NAMES[col]+' blocks are gone.',2600);
+    say('Color Clear! '+n+' '+shapeName(col)+' blocks are gone.',2600);
     compact(); updateHUD();
   }
 
@@ -1365,6 +1374,68 @@ select{font:600 .85rem var(--body); color:var(--fg); background:var(--bg); borde
     ctx.closePath();
   }
 
+
+  /* ---------- block icon sets ---------- */
+  /* Each icon is drawn in a -1..1 box (the canvas is scaled before the call). ink = the icon color; cut() paints details in the tile color. */
+  function useInk(ink){ ctx.globalCompositeOperation='source-over'; ctx.fillStyle=ink; ctx.strokeStyle=ink; ctx.lineCap='round'; ctx.lineJoin='round'; }
+  function useCut(bg){ if(bg==='clear'){ ctx.globalCompositeOperation='destination-out'; ctx.fillStyle='#000'; ctx.strokeStyle='#000'; } else { ctx.globalCompositeOperation='source-over'; ctx.fillStyle=bg; ctx.strokeStyle=bg; } }
+  function ell(x,y,rx,ry,rot){ ctx.beginPath(); ctx.ellipse(x,y,rx,ry,rot||0,0,Math.PI*2); ctx.fill(); }
+  function tri(a,b,c,d,e,f){ ctx.beginPath(); ctx.moveTo(a,b); ctx.lineTo(c,d); ctx.lineTo(e,f); ctx.closePath(); ctx.fill(); }
+  var TILESETS={
+    classic:{name:'Classic shapes'},
+    dog:{name:'Dogs',names:['paw','bone','bowl','ball','doghouse'],draw:[
+      function(ink,bg){ ell(0,0.38,0.58,0.48); ell(-0.78,-0.05,0.2,0.3,-0.4); ell(-0.3,-0.55,0.22,0.3,-0.15); ell(0.3,-0.55,0.22,0.3,0.15); ell(0.78,-0.05,0.2,0.3,0.4); },
+      function(ink,bg){ ctx.save(); ctx.rotate(-0.6); ctx.fillRect(-0.55,-0.22,1.1,0.44); for(var i=0;i<4;i++){ ctx.beginPath(); ctx.arc(i<2?-0.62:0.62,(i%2)?0.3:-0.3,0.3,0,Math.PI*2); ctx.fill(); } ctx.restore(); },
+      function(ink,bg){ ctx.beginPath(); ctx.moveTo(-0.9,-0.05); ctx.lineTo(0.9,-0.05); ctx.bezierCurveTo(0.9,0.55,0.5,0.85,0,0.85); ctx.bezierCurveTo(-0.5,0.85,-0.9,0.55,-0.9,-0.05); ctx.closePath(); ctx.fill();
+        ell(-0.42,-0.3,0.26,0.24); ell(0.05,-0.43,0.28,0.26); ell(0.48,-0.28,0.24,0.22); },
+      function(ink,bg){ ctx.beginPath(); ctx.arc(0,0,0.86,0,Math.PI*2); ctx.fill(); useCut(bg); ctx.lineWidth=0.13; ctx.beginPath(); ctx.arc(-1.05,0,0.75,-0.62,0.62); ctx.stroke(); ctx.beginPath(); ctx.arc(1.05,0,0.75,Math.PI-0.62,Math.PI+0.62); ctx.stroke(); },
+      function(ink,bg){ ctx.beginPath(); ctx.moveTo(-0.85,0.8); ctx.lineTo(-0.85,-0.05); ctx.lineTo(0,-0.85); ctx.lineTo(0.85,-0.05); ctx.lineTo(0.85,0.8); ctx.closePath(); ctx.fill();
+        useCut(bg); ctx.beginPath(); ctx.moveTo(-0.3,0.8); ctx.lineTo(-0.3,0.2); ctx.arc(0,0.2,0.3,Math.PI,0); ctx.lineTo(0.3,0.8); ctx.closePath(); ctx.fill(); }
+    ]},
+    cat:{name:'Cats',names:['cat face','fish','yarn','bell','mouse'],draw:[
+      function(ink,bg){ ctx.beginPath(); ctx.arc(0,0.14,0.72,0,Math.PI*2); ctx.fill(); tri(-0.74,0.05,-0.62,-0.88,-0.1,-0.45); tri(0.74,0.05,0.62,-0.88,0.1,-0.45);
+        useCut(bg); ell(-0.27,0.1,0.1,0.16); ell(0.27,0.1,0.1,0.16); tri(-0.1,0.3,0.1,0.3,0,0.42); },
+      function(ink,bg){ ell(-0.12,0,0.64,0.4); tri(0.4,0,0.94,-0.44,0.94,0.44); useCut(bg); ctx.beginPath(); ctx.arc(-0.45,-0.06,0.08,0,Math.PI*2); ctx.fill(); ctx.lineWidth=0.08; ctx.beginPath(); ctx.moveTo(0.05,-0.3); ctx.quadraticCurveTo(-0.1,0,0.05,0.3); ctx.stroke(); },
+      function(ink,bg){ ctx.beginPath(); ctx.arc(-0.08,-0.05,0.72,0,Math.PI*2); ctx.fill(); useCut(bg); ctx.lineWidth=0.09;
+        for(var k=-0.38;k<=0.4;k+=0.38){ ctx.beginPath(); ctx.moveTo(-0.8,k-0.15); ctx.quadraticCurveTo(-0.1,k+0.4,0.7,k-0.1); ctx.stroke(); }
+        useInk(ink); ctx.lineWidth=0.1; ctx.beginPath(); ctx.moveTo(0.45,0.62); ctx.quadraticCurveTo(0.8,0.98,0.98,0.7); ctx.stroke(); },
+      function(ink,bg){ ctx.beginPath(); ctx.arc(0,0.15,0.68,0,Math.PI*2); ctx.fill(); ctx.lineWidth=0.1; ctx.beginPath(); ctx.arc(0,-0.72,0.18,0,Math.PI*2); ctx.stroke();
+        useCut(bg); ctx.lineWidth=0.1; ctx.beginPath(); ctx.moveTo(-0.66,0.28); ctx.lineTo(0.66,0.28); ctx.stroke(); ctx.beginPath(); ctx.arc(0,0.46,0.1,0,Math.PI*2); ctx.fill(); },
+      function(ink,bg){ ell(0.08,0.2,0.62,0.44); tri(-0.5,-0.12,-0.98,0.3,-0.5,0.56); ell(0.22,-0.32,0.3,0.3); useCut(bg); ell(0.22,-0.32,0.14,0.14); ctx.beginPath(); ctx.arc(-0.55,0.26,0.06,0,Math.PI*2); ctx.fill();
+        useInk(ink); ctx.lineWidth=0.09; ctx.beginPath(); ctx.moveTo(0.66,0.3); ctx.bezierCurveTo(0.98,0.25,0.7,0.62,0.98,0.88); ctx.stroke(); }
+    ]},
+    nature:{name:'Nature',names:['fire','water','leaf','wind','lightning'],draw:[
+      function(ink,bg){ ctx.beginPath(); ctx.moveTo(0.05,-0.95); ctx.bezierCurveTo(0.25,-0.45,0.8,-0.2,0.8,0.35); ctx.bezierCurveTo(0.8,0.75,0.45,0.95,0,0.95); ctx.bezierCurveTo(-0.45,0.95,-0.8,0.75,-0.8,0.35); ctx.bezierCurveTo(-0.8,-0.05,-0.5,-0.3,-0.3,-0.6); ctx.bezierCurveTo(-0.2,-0.3,-0.05,-0.3,0.05,-0.95); ctx.closePath(); ctx.fill();
+        useCut(bg); ctx.beginPath(); ctx.moveTo(0,0.12); ctx.bezierCurveTo(0.32,0.36,0.36,0.62,0,0.8); ctx.bezierCurveTo(-0.36,0.62,-0.32,0.36,0,0.12); ctx.closePath(); ctx.fill(); },
+      function(ink,bg){ ctx.beginPath(); ctx.moveTo(0,-0.95); ctx.bezierCurveTo(0.2,-0.5,0.76,-0.05,0.76,0.38); ctx.arc(0,0.38,0.76,0,Math.PI); ctx.bezierCurveTo(-0.76,-0.05,-0.2,-0.5,0,-0.95); ctx.closePath(); ctx.fill();
+        useCut(bg); ctx.lineWidth=0.1; ctx.beginPath(); ctx.arc(0,0.38,0.5,Math.PI*0.62,Math.PI*0.92); ctx.stroke(); },
+      function(ink,bg){ ctx.beginPath(); ctx.moveTo(-0.8,0.8); ctx.bezierCurveTo(-0.95,-0.1,-0.2,-0.9,0.88,-0.88); ctx.bezierCurveTo(0.92,0,0.3,0.88,-0.8,0.8); ctx.closePath(); ctx.fill();
+        useCut(bg); ctx.lineWidth=0.09; ctx.beginPath(); ctx.moveTo(-0.7,0.7); ctx.lineTo(0.4,-0.4); ctx.stroke(); },
+      function(ink,bg){ ctx.lineWidth=0.14; for(var i=-1;i<=1;i++){ var y=i*0.55; ctx.beginPath(); ctx.moveTo(-0.9,y); ctx.bezierCurveTo(-0.5,y-0.35,-0.1,y+0.35,0.3,y); ctx.quadraticCurveTo(0.62,y-0.3,0.82,y-0.1); ctx.stroke(); } },
+      function(ink,bg){ ctx.beginPath(); ctx.moveTo(0.18,-0.95); ctx.lineTo(-0.66,0.1); ctx.lineTo(-0.05,0.1); ctx.lineTo(-0.2,0.95); ctx.lineTo(0.7,-0.22); ctx.lineTo(0.06,-0.22); ctx.closePath(); ctx.fill(); }
+    ]}
+  };
+  var tilesKey='classic';
+  function drawIcon(fn,cx,cy,u,ink,bg){
+    ctx.save(); ctx.translate(cx,cy); ctx.scale(u,u); useInk(ink); fn(ink,bg); ctx.restore(); ctx.globalCompositeOperation='source-over';
+  }
+  function shapeName(i){ var t=TILESETS[tilesKey]; return (t.names||SHAPE_NAMES)[i]; }
+  var markCache={};
+  function shapeMark(i){
+    var t=TILESETS[tilesKey], col=colors[i];
+    if(!t.draw) return '<span class="sw" style="color:'+col+'">'+SHAPE_CHARS[i]+'</span>';
+    var key=tilesKey+i+col;
+    if(!markCache[key]){
+      try{
+        var oc=document.createElement('canvas'); oc.width=oc.height=48;
+        var saved=ctx; ctx=oc.getContext('2d');
+        drawIcon(t.draw[i],24,24,19,col,'clear');
+        markCache[key]=oc.toDataURL('image/png'); ctx=saved;
+      }catch(e){ return ''; }
+    }
+    return '<img class="gi" alt="" src="'+markCache[key]+'">';
+  }
+
   function glyph(kind,cx,cy,u){
     ctx.beginPath();
     if(kind===0){ctx.arc(cx,cy,u,0,Math.PI*2);}
@@ -1398,7 +1469,9 @@ select{font:600 .85rem var(--body); color:var(--fg); background:var(--bg); borde
         ctx.lineTo(cx+Math.cos(a)*size*0.42*pulse,cy+Math.sin(a)*size*0.42*pulse); ctx.stroke();
       }
     } else {
-      glyph(b.c,cx,cy+size*0.03,size*(bigShapes?0.27:0.16));
+      var ts=TILESETS[tilesKey];
+      if(ts.draw) drawIcon(ts.draw[b.c],cx,cy+size*0.02,size*(bigShapes?0.37:0.31),ink,base);
+      else glyph(b.c,cx,cy+size*0.03,size*(bigShapes?0.27:0.16));
     }
     if(b.ice){
       ctx.fillStyle='rgba(222,241,255,0.55)';
@@ -1543,7 +1616,7 @@ select{font:600 .85rem var(--body); color:var(--fg); background:var(--bg); borde
   $('ovBtn2').addEventListener('click',function(){ ensureAudio(); var f=onOverlay2; if(f) f(); });
   $('levelsBtn').addEventListener('click',function(){ ensureAudio(); openPicker(); });
   $('pickClose').addEventListener('click',function(){ closePicker(); });
-  var APP_VERSION='0.8.0';
+  var APP_VERSION='0.9.0';
   $('verNum').textContent='v'+APP_VERSION;
   $('howBtn').addEventListener('click',function(){ showIntro(); });
   document.addEventListener('visibilitychange',function(){
@@ -1590,6 +1663,7 @@ select{font:600 .85rem var(--body); color:var(--fg); background:var(--bg); borde
   $('palette').addEventListener('change',function(){
     paletteKey=this.value; safeSet('eb-palette',paletteKey); applyPalette(); updateHUD();
   });
+  $('tilesel').addEventListener('change',function(){ tilesKey=TILESETS[this.value]?this.value:'classic'; safeSet('eb-tiles',tilesKey); updateHUD(); });
   $('bigshapes').addEventListener('change',function(){ bigShapes=this.checked; safeSet('eb-big',bigShapes?'1':'0'); });
   $('hintsel').addEventListener('change',function(){
     var v=this.value; safeSet('eb-hint',v); hintDelay=v==='off'?0:parseInt(v,10); hintMove=null; idleT=0;
@@ -1636,6 +1710,7 @@ select{font:600 .85rem var(--body); color:var(--fg); background:var(--bg); borde
   /* ---------- boot ---------- */
   $('palette').value=paletteKey;
   $('bigshapes').checked=bigShapes;
+  $('tilesel').value=tilesKey;
   $('theme').value=savedTheme;
   $('soundbox').checked=soundOn;
   $('musicbox').checked=musicOn;
